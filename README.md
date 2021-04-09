@@ -9,11 +9,15 @@ _Realizado en 2021-1_
 
 ## Tarea 1: CR-Tree :construction:
 
+> Ver [aquí](https://github.com/fguinez/iic2333-tareas/tree/master/T1)
+
 _**Deadline:** Miércoles 28 de abril de 2021, 23:59_
 
 
 
 
 ## Tarea 2: Scheduler :construction:
+
+> Ver [aquí](https://github.com/fguinez/iic2333-tareas/tree/master/T2)
 
 _**Deadline:** Miércoles 28 de abril de 2021, 23:59_

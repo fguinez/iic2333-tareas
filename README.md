@@ -7,13 +7,13 @@ Repositorio destinado a las tareas del ramo Sistemas Operativos y Redes de la Po
 
 _Realizado en 2021-1_
 
-## Tarea 1: CR-Tree
+## Tarea 1: CR-Tree :construction:
 
 _**Deadline:** Miércoles 28 de abril de 2021, 23:59_
 
 
 
 
-## Tarea 2: Scheduler
+## Tarea 2: Scheduler :construction:
 
 _**Deadline:** Miércoles 28 de abril de 2021, 23:59_

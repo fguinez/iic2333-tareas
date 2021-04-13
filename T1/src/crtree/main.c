@@ -87,6 +87,35 @@ int main(int argc, char **argv)
         char* hijos = strsep(&pedro, ",");
         printf("TIMEOUT (manage): %s\n", timeout);
         printf("TOTAL DE HIJOS (manage): %s\n", hijos);
+
+        for (int i = 0; i<atoi(hijos);i++){
+            /* Leo el número del proceso hijo*/
+            char* num = strsep(&pedro, ",");
+
+            /* Creo una lista con los parámetros para el execve*/
+            char* args[4];
+            args[0] = "./crtree";
+            args[1] = "input.txt";
+            args[2] = num;
+            args[3] = NULL;
+
+            /* Hacemos fork*/
+            printf("**************\n");
+            printf("VAMOS A HACER UN FORK\n");
+            pid_t childpid;
+            childpid = fork();
+
+            /* Si el proceso es hijo, tambíen hacemos execve*/
+            if (childpid==0){
+                execve("./crtree", args, NULL);
+            }
+        }
+
+        /* Hacemos Wait de los hijos */
+        for (int i = 0; i <atoi(hijos);i++){
+            wait(&status);
+        }
+
         printf("PROCESO MANAGE TERMINADO\n");
         printf("++++++++++++++++++++++++\n");
     }

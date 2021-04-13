@@ -28,3 +28,9 @@ char* buscar_linea(const char* input, int nro_proceso){
     return 0;
 
 }
+
+void crear_hijos(char* proceso){
+    printf("PROCESO: %s", proceso);
+
+
+}

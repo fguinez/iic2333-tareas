@@ -8,6 +8,11 @@
 #include <string.h>
 #include <signal.h>
 
+/* Hay dos variables globales */
+/* proceso_global es un puntero a un string que tiene información del proceso actual que se está ejecutando */
+/* lista_hijos es una lista enlazada que cree yo que tiene los pid_t de todos los hijos del proceso que se está
+ * ejecutando actualmente*/
+/* Puedes usar estas variables en cualquier archivo. Las programé para que se actualizaran según corresponda */
 char* proceso_global;
 struct lista lista_hijos;
 
@@ -15,8 +20,7 @@ struct lista lista_hijos;
 int main(int argc, char **argv)
 {
 
-  printf("Hello T1! \n");
-  printf("+++++++++++++++++\n");
+  printf("&&&&&&&&&&&&&&&&&&&&&&\n");
     if(argc != 3)
     {
         printf("ARGUMENTOS RECIBIDOS: %d\n", argc);
@@ -27,7 +31,6 @@ int main(int argc, char **argv)
     }
     /* Abre el input file */
     FILE* input_stream = fopen(argv[1], "r");
-    int status;
 
     /* Sacamos el índice y el total de procesos */
     int indice = atoi(argv[2]);
@@ -40,10 +43,10 @@ int main(int argc, char **argv)
     printf("PROCESO EN DESAROLLO: %s", proceso);
     char* proceso_copia;
     proceso_copia = strdup(proceso);
+    actualizar(proceso_copia);
 
     /* Obtenemos el identificador del proceso usando la función strsep()*/
     char* ident = strsep(&proceso, ",");
-    printf("IDENTIFICADOR: %s\n", ident);
 
 
     if (!strcmp(ident, "R")){
@@ -54,50 +57,14 @@ int main(int argc, char **argv)
         char* hijos = strsep(&proceso, ",");
         printf("TIMEOUT: %s\n", timeout);
         printf("TOTAL DE HIJOS: %s\n", hijos);
-        actualizar(proceso_copia);
-        printf("aaaaa el proceso global es: %s\n", proceso_global);
 
-        /* Para cada hijo, hacemos fork y execve*/
-        for (int i = 0; i<atoi(hijos); i++){
-            /* Leo el número del proceso hijo*/
-            char* num = strsep(&proceso, ",");
-
-            /* Creo una lista con los parámetros para el execve*/
-            char* args[4];
-            args[0] = "./crtree";
-            args[1] = "input.txt";
-            args[2] = num;
-            args[3] = NULL;
-
-            /* Hacemos fork*/
-            printf("**************\n");
-            printf("VAMOS A HACER UN FORK\n");
-            pid_t childpid;
-            childpid = fork();
-
-            /* Si el proceso es hijo, tambíen hacemos execve*/
-            if (childpid==0){
-                execve("./crtree", args, NULL);
-            }
-            else{
-                printf("---------------------->CHILDPID: %d\n", childpid);
-                insert(&childpid);
-
-            }
-        }
-
-
-        /* El proceso padre se queda esperando a que todos los hijos terminen*/
+        /* Acá falta el TIMEOUT que vaya en paralelo con la función crear hijos*/
         signal(SIGINT, &signal_sigint_handler_root);
-        for (int i = 0; i<atoi(hijos); i++){
-            wait(&status);
-        }
+        signal(SIGABRT, &signal_sigint_handler_root);
 
+        crear_hijos_manager(proceso_copia);
         printf("PROCESO ROOT TERMINADO\n");
-
-
         printf("++++++++++++++++++++++++\n");
-
     }
 
     else if (!strcmp(ident, "M")){
@@ -108,46 +75,34 @@ int main(int argc, char **argv)
         printf("TIMEOUT (manage): %s\n", timeout);
         printf("TOTAL DE HIJOS (manage): %s\n", hijos);
 
-        for (int i = 0; i<atoi(hijos);i++){
-            /* Leo el número del proceso hijo*/
-            char* num = strsep(&proceso, ",");
+        /* Acá falta el TIMEOUT que vaya en paralelo con la función crear hijos*/
+        signal(SIGINT, &signal_sigint_handler_nonroot);
+        signal(SIGABRT, &signal_sigabrt_handler);
 
-            /* Creo una lista con los parámetros para el execve*/
-            char* args[4];
-            args[0] = "./crtree";
-            args[1] = "input.txt";
-            args[2] = num;
-            args[3] = NULL;
-
-            /* Hacemos fork*/
-            printf("**************\n");
-            printf("VAMOS A HACER UN FORK\n");
-            pid_t childpid;
-            childpid = fork();
-
-            /* Si el proceso es hijo, tambíen hacemos execve*/
-            if (childpid==0){
-                execve("./crtree", args, NULL);
-            }
-        }
-
-        /* Hacemos Wait de los hijos */
-        for (int i = 0; i <atoi(hijos);i++){
-            wait(&status);
-        }
-
+        crear_hijos_manager(proceso_copia);
         printf("PROCESO MANAGE TERMINADO\n");
+
+        /* Acá el proceso manager debiese manejar los archivos de sus procesos workers y juntarlos todos
+         * en un mismo archivo, tal como lo pide el enunciado.*/
+
         printf("++++++++++++++++++++++++\n");
+        exit(0);
     }
 
     else{
         printf("ES UN PROCESO WORKER\n");
-        printf("PROCESO WORKER TERMINADO\n");
         signal(SIGINT, &signal_sigint_handler_nonroot);
+        signal(SIGABRT, &signal_sigabrt_handler_worker);
+        printf("PROCESO WORKER TERMINADO\n");
+        /* Falta implementar lo que hace el worker*/
+        /* Debiese hacer fork y que el proceso hijo haga execve al ejecutable y que ese proceso
+         * hijo se encargue de eso. Después, el hijo le devuelve el resultado al padre (worker) y este
+         * debiese guardar el resultado en un archivo como se pide en el enunciado*/
 
         printf("++++++++++++++++++++++++\n");
-        exit(status);
+        exit(0);
     }
+
 
 
     fclose(input_stream);

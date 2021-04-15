@@ -42,7 +42,7 @@ void signal_sigint_handler_root(int sig){
     printf("HA LLEGADO UNA SEÑAL DE SIGINT A ROOT\n");
     printf("SE ENVIARÁ SIGABRT A TODOS SUS HIJOS\n");
     if (lista_hijos.hijo == 0){
-        printf("NO QUEDAN PROCESOS HIJOS\n");
+        printf("NO TIENE PROCESOS HIJOS\n");
     }
     else if (lista_hijos.sig == NULL){
         printf("ENVIANDO SEÑAL A 1 HIJO: %d\n", lista_hijos.hijo);

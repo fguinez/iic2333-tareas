@@ -94,10 +94,7 @@ int main(int argc, char **argv)
         }
 
         printf("PROCESO ROOT TERMINADO\n");
-        while (1){
-            printf("Jajaja\n");
-            sleep(1);
-        }
+
 
         printf("++++++++++++++++++++++++\n");
 

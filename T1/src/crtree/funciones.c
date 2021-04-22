@@ -38,7 +38,7 @@ char* buscar_linea(const char* input, int nro_proceso){
     return 0;
 }
 /* Crea los hijos de un proceso manager*/
-void crear_hijos_manager(char* proceso){
+void crear_hijos_manager(char* proceso, char* filename){
     char* ident = strsep(&proceso, ",");
     int timeout = atoi(strsep(&proceso, ","));
     char* hijos = strsep(&proceso, ",");
@@ -51,7 +51,7 @@ void crear_hijos_manager(char* proceso){
         /* Creo una lista con los parámetros para el execve*/
         char* args[4];
         args[0] = "./crtree";
-        args[1] = "input.txt";
+        args[1] = filename;
         args[2] = num;
         args[3] = NULL;
 

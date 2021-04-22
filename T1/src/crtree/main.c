@@ -69,7 +69,7 @@ int main(int argc, char **argv)
         signal(SIGINT, &signal_sigint_handler_root);
         signal(SIGABRT, &signal_sigint_handler_root);
 
-        crear_hijos_manager(proceso_copia);
+        crear_hijos_manager(proceso_copia, argv[1]);
         printf("PROCESO ROOT TERMINADO\n");
         printf("++++++++++++++++++++++++\n");
     }
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
         signal(SIGINT, &signal_sigint_handler_nonroot);
         signal(SIGABRT, &signal_sigabrt_handler);
 
-        crear_hijos_manager(proceso_copia);
+        crear_hijos_manager(proceso_copia, argv[1]);
         printf("PROCESO MANAGE TERMINADO\n");
 
         /* Acá el proceso manager debiese manejar los archivos de sus procesos workers y juntarlos todos

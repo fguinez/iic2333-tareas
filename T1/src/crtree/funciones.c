@@ -10,6 +10,9 @@
 extern char* proceso_global;
 extern struct lista lista_hijos;
 
+
+
+
 /* Actualiza el valor del proceso actual */
 void actualizar(char* proceso){
     proceso_global = proceso;
@@ -37,6 +40,10 @@ char* buscar_linea(const char* input, int nro_proceso){
     }
     return 0;
 }
+
+
+
+// CREADORES DE HIJOS
 /* Crea los hijos de un proceso manager*/
 void crear_hijos_manager(char* proceso, char* filename){
     char* ident = strsep(&proceso, ",");
@@ -73,9 +80,84 @@ void crear_hijos_manager(char* proceso, char* filename){
     /* El proceso padre se queda esperando a que todos los hijos terminen*/
     for (int i = 0; i<atoi(hijos); i++){
         wait(&status);
-    }
-}
+        //waitpid(childpids[i], NULL; 0);
 
+    }
+};
+
+
+void crear_hijo_worker(char* instructions){
+    /* Separamos las instrucciones */
+    char* executable = strsep(&instructions, ",");
+    int n = atoi(strsep(&instructions, ","));
+    
+    char** args = malloc(n * sizeof(char*));
+    for (int i=0; i<n; i++)
+    {
+        args[i] = strsep(&instructions, ",");
+    }
+
+    /* Creamos un hijo de worker para realizar exec */
+    pid_t childpid;
+    childpid = fork();
+
+    if (childpid >= 0)  /* El fork se realizó con éxito */
+    {
+        if (childpid == 0)  /* Proceso hijo */
+        {
+            printf("WORKER: Voy a ejecutar %s", executable);
+            execvp(executable, args);
+        } else {    /* Proceso padre worker */
+            int status;
+            waitpid(childpid, &status, WUNTRACED);
+        };
+    };
+
+
+
+
+
+    char* ident = strsep(&proceso, ",");
+    int timeout = atoi(strsep(&proceso, ","));
+    char* hijos = strsep(&proceso, ",");
+    int status;
+    /* Para cada hijo, hacemos fork y execve*/
+    for (int i = 0; i<atoi(hijos); i++){
+        /* Leo el número del proceso hijo*/
+        char* num = strsep(&proceso, ",");
+
+        /* Creo una lista con los parámetros para el execve*/
+        char* args[4];
+        args[0] = "./crtree";
+        args[1] = filename;
+        args[2] = num;
+        args[3] = NULL;
+
+        /* Hacemos fork*/
+        pid_t childpid;
+        childpid = fork();
+
+        /* Si el proceso es hijo hacemos execve*/
+        if (childpid==0){
+            execve("./crtree", args, NULL);
+        }
+        else{
+            insert(&childpid);
+        }
+    }
+
+    /* Se setean las señales dependiendo si el proceso de root o nonroot*/
+
+    /* El proceso padre se queda esperando a que todos los hijos terminen*/
+    for (int i = 0; i<atoi(hijos); i++){
+        wait(&status);
+    };
+};
+
+
+
+
+// SEÑALES
 /* Función que maneja las señales de SIGINT para procesos root*/
 void signal_sigint_handler_root(int sig){
     printf("HA LLEGADO UNA SEÑAL A ROOT\n");

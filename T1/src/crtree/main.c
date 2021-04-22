@@ -87,7 +87,7 @@ int main(int argc, char **argv)
         signal(SIGABRT, &signal_sigabrt_handler);
 
         crear_hijos_manager(proceso_copia, argv[1]);
-        printf("PROCESO MANAGE TERMINADO\n");
+        printf("PROCESO MANAGER TERMINADO\n");
 
         /* Acá el proceso manager debiese manejar los archivos de sus procesos workers y juntarlos todos
          * en un mismo archivo, tal como lo pide el enunciado.*/
@@ -97,15 +97,15 @@ int main(int argc, char **argv)
     }
 
     else{
-        printf("ES UN PROCESO WORKER\n");
+        printf("INICIANDO PROCESO WORKER\n");
         signal(SIGINT, &signal_sigint_handler_nonroot);
         signal(SIGABRT, &signal_sigabrt_handler_worker);
-        printf("PROCESO WORKER TERMINADO\n");
-        /* Falta implementar lo que hace el worker*/
-        /* Debiese hacer fork y que el proceso hijo haga execve al ejecutable y que ese proceso
-         * hijo se encargue de eso. Después, el hijo le devuelve el resultado al padre (worker) y este
+        
+        // Debiese hacer fork y que el proceso hijo haga execve al ejecutable y que ese proceso
+        crear_hijo_worker(proceso_copia);
+        /* * hijo se encargue de eso. Después, el hijo le devuelve el resultado al padre (worker) y este
          * debiese guardar el resultado en un archivo como se pide en el enunciado*/
-
+        printf("PROCESO WORKER TERMINADO\n");
         printf("++++++++++++++++++++++++\n");
         exit(0);
     }

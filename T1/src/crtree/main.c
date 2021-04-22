@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 
     /* Como ya abrimos el archivo y ya tenemos el índice, buscamos el proceso asociado al índice */
     char* proceso = buscar_linea(argv[1], indice);
-    printf("PROCESO EN DESAROLLO: %s", proceso);
+    printf("PROCESO EN DESAROLLO: %s\n", proceso);
     char* proceso_copia;
     proceso_copia = strdup(proceso);
     actualizar(proceso_copia);
@@ -57,37 +57,37 @@ int main(int argc, char **argv)
 
 
     if (!strcmp(ident, "R")){
-        printf("ES UN PROCESO ROOT\n");
+        printf("P%i (R) Iniciando\n", indice);
 
         /* Esto extrae los valores de los otros parḿetros del proceso*/
         char* timeout = strsep(&proceso, ",");
         char* hijos = strsep(&proceso, ",");
-        printf("TIMEOUT: %s\n", timeout);
-        printf("TOTAL DE HIJOS: %s\n", hijos);
+        printf("P%i (R) TIMEOUT: %s\n", indice, timeout);
+        printf("P%i (R) TOTAL DE HIJOS: %s\n", indice, hijos);
 
         /* Acá falta el TIMEOUT que vaya en paralelo con la función crear hijos*/
         signal(SIGINT, &signal_sigint_handler_root);
         signal(SIGABRT, &signal_sigint_handler_root);
 
         crear_hijos_manager(proceso_copia, argv[1]);
-        printf("PROCESO ROOT TERMINADO\n");
+        printf("P%i (R) Terminado\n", indice);
         printf("++++++++++++++++++++++++\n");
     }
 
     else if (!strcmp(ident, "M")){
-        printf("ES UN PROCESO MANAGE\n");
+        printf("P%i (M): Iniciando\n", indice);
         /* Esto extrae los valores de los otros parḿetros del proceso*/
         char* timeout = strsep(&proceso, ",");
         char* hijos = strsep(&proceso, ",");
-        printf("TIMEOUT (manage): %s\n", timeout);
-        printf("TOTAL DE HIJOS (manage): %s\n", hijos);
+        printf("P%i (M): TIMEOUT: %s\n", indice, timeout);
+        printf("P%i (M): TOTAL DE HIJOS: %s\n", indice, hijos);
 
         /* Acá falta el TIMEOUT que vaya en paralelo con la función crear hijos*/
         signal(SIGINT, &signal_sigint_handler_nonroot);
         signal(SIGABRT, &signal_sigabrt_handler);
 
         crear_hijos_manager(proceso_copia, argv[1]);
-        printf("PROCESO MANAGER TERMINADO\n");
+        printf("P%i (M): Terminado\n", indice);
 
         /* Acá el proceso manager debiese manejar los archivos de sus procesos workers y juntarlos todos
          * en un mismo archivo, tal como lo pide el enunciado.*/
@@ -97,15 +97,15 @@ int main(int argc, char **argv)
     }
 
     else{
-        printf("INICIANDO PROCESO WORKER\n");
+        printf("P%i (W): Iniciando...\n", indice);
         signal(SIGINT, &signal_sigint_handler_nonroot);
         signal(SIGABRT, &signal_sigabrt_handler_worker);
         
         // Debiese hacer fork y que el proceso hijo haga execve al ejecutable y que ese proceso
-        crear_hijo_worker(proceso_copia);
+        crear_hijo_worker(proceso_copia, indice);
         /* * hijo se encargue de eso. Después, el hijo le devuelve el resultado al padre (worker) y este
          * debiese guardar el resultado en un archivo como se pide en el enunciado*/
-        printf("PROCESO WORKER TERMINADO\n");
+        printf("P%i (W): Terminado\n", indice);
         printf("++++++++++++++++++++++++\n");
         exit(0);
     }

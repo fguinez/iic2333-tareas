@@ -86,13 +86,20 @@ void crear_hijos_manager(char* proceso, char* filename){
 };
 
 
-void crear_hijo_worker(char* instructions){
+void crear_hijo_worker(char* instructions, int nro_proceso){
     /* Separamos las instrucciones */
+    // No guardamos primer elemento, siempre será W
+    strsep(&instructions, ",");
+    // Guardamos el comando a ejecutar
     char* executable = strsep(&instructions, ",");
+    // Guardamos la cantidad de argumentos del comando
     int n = atoi(strsep(&instructions, ","));
     
-    char** args = malloc(n * sizeof(char*));
-    for (int i=0; i<n; i++)
+    // Guardamos un array con el ejecutable y los n argumentos
+    char** args = malloc(n+1 * sizeof(char*));
+    args[0] = executable;
+    //printf("====== arg[0]: %s\n", args[0]);
+    for (int i=1; i<n; i++)
     {
         args[i] = strsep(&instructions, ",");
     }
@@ -105,52 +112,15 @@ void crear_hijo_worker(char* instructions){
     {
         if (childpid == 0)  /* Proceso hijo */
         {
-            printf("WORKER: Voy a ejecutar %s", executable);
+            printf("P%i (W): Voy a ejecutar %s\n", nro_proceso, executable);
             execvp(executable, args);
         } else {    /* Proceso padre worker */
             int status;
-            waitpid(childpid, &status, WUNTRACED);
+            //waitpid(childpid, &status, WUNTRACED);
+            wait(&status); /* wait for child to exit, and store its status */
+            printf("P%i (W): Child's exit code is: %d\n",nro_proceso, WEXITSTATUS(status));
+            printf("P%i (W): Child pid: %i\n", nro_proceso, childpid);
         };
-    };
-
-
-
-
-
-    char* ident = strsep(&proceso, ",");
-    int timeout = atoi(strsep(&proceso, ","));
-    char* hijos = strsep(&proceso, ",");
-    int status;
-    /* Para cada hijo, hacemos fork y execve*/
-    for (int i = 0; i<atoi(hijos); i++){
-        /* Leo el número del proceso hijo*/
-        char* num = strsep(&proceso, ",");
-
-        /* Creo una lista con los parámetros para el execve*/
-        char* args[4];
-        args[0] = "./crtree";
-        args[1] = filename;
-        args[2] = num;
-        args[3] = NULL;
-
-        /* Hacemos fork*/
-        pid_t childpid;
-        childpid = fork();
-
-        /* Si el proceso es hijo hacemos execve*/
-        if (childpid==0){
-            execve("./crtree", args, NULL);
-        }
-        else{
-            insert(&childpid);
-        }
-    }
-
-    /* Se setean las señales dependiendo si el proceso de root o nonroot*/
-
-    /* El proceso padre se queda esperando a que todos los hijos terminen*/
-    for (int i = 0; i<atoi(hijos); i++){
-        wait(&status);
     };
 };
 

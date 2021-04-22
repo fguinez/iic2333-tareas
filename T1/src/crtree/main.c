@@ -23,14 +23,21 @@ int main(int argc, char **argv)
   printf("&&&&&&&&&&&&&&&&&&&&&&\n");
     if(argc != 3)
     {
-        printf("ARGUMENTOS RECIBIDOS: %d\n", argc);
-        printf("Modo de uso: %s input output\nDonde:\n", argv[0]);
-        printf("\t\"input\" es la ruta al archivo de input\n");
-        printf("\t\"output\" es la ruta al archivo de output\n");
-        return 1;
+      printf("ARGUMENTOS RECIBIDOS: %d\n", argc);
+      printf("Modo de uso: %s <input> <process>\nDonde:\n", argv[0]);
+      printf("\t\"<input>\" es la ruta al archivo de input\n");
+      printf("\t\"<process>\" es índice del proceso desde donde debe empezar la ejecución\n");
+      return 1;
     }
     /* Abre el input file */
     FILE* input_stream = fopen(argv[1], "r");
+
+    // Comprueba que el archivo exista
+    if(!input_stream)
+    {
+      fprintf(stderr, "No se ha encontrado el archivo %s\n", argv[1]);
+      return 2;
+    };
 
     /* Sacamos el índice y el total de procesos */
     int indice = atoi(argv[2]);

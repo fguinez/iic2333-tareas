@@ -41,6 +41,22 @@ char* buscar_linea(const char* input, int nro_proceso){
     return 0;
 }
 
+// Code from https://stackoverflow.com/questions/1515195/how-to-remove-n-or-t-from-a-given-string-in-c
+void strip(char *s)
+{
+    char *p2 = s;
+    while(*s != '\0') {
+        if(*s != '\t' && *s != '\n')
+        {
+            *p2++ = *s++;
+        } else
+        {
+            ++s;
+        }
+    }
+    *p2 = '\0';
+}
+
 
 
 // CREADORES DE HIJOS
@@ -98,10 +114,13 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
     // Guardamos un array con el ejecutable y los n argumentos
     char** args = malloc(n+1 * sizeof(char*));
     args[0] = executable;
-    //printf("====== arg[0]: %s\n", args[0]);
-    for (int i=1; i<n; i++)
+    for (int i=1; i<n+1; i++)
     {
         args[i] = strsep(&instructions, ",");
+        if (i == n)
+        {
+            strip(args[i]);              // Quita \n del último argumento
+        }
     }
 
     /* Creamos un hijo de worker para realizar exec */
@@ -120,6 +139,21 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
             wait(&status); /* wait for child to exit, and store its status */
             printf("P%i (W): Child's exit code is: %d\n",nro_proceso, WEXITSTATUS(status));
             printf("P%i (W): Child pid: %i\n", nro_proceso, childpid);
+
+            // Definimos el nombre del archivo de salida
+            char filename[10];
+            sprintf(filename, "%d.txt", nro_proceso);
+            // Abrimos el archivo
+            FILE* file = fopen(filename, "w");
+            // Escribimos el output en el archivo
+            for (int i=0; i<n+1; i++)
+            {
+                fprintf(file, "%s,", args[i]);
+            };
+            fprintf(file, "TIME,%i,0\n", WEXITSTATUS(status));
+            // Cerramos el archivo
+            fclose(file);
+            printf("P%i (W): Archivo %s generado\n", nro_proceso, filename);
         };
     };
 };

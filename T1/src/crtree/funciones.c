@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <string.h>
+#include <time.h>
 extern char* proceso_global;
 extern struct lista lista_hijos;
 
@@ -129,14 +130,16 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
 
     if (childpid >= 0)  /* El fork se realizó con éxito */
     {
+        time_t init_time = time(NULL);
         if (childpid == 0)  /* Proceso hijo */
         {
-            printf("P%i (W): Voy a ejecutar %s\n", nro_proceso, executable);
+            //printf("P%i (W): Voy a ejecutar %s\n", nro_proceso, executable);
             execvp(executable, args);
         } else {    /* Proceso padre worker */
             int status;
             //waitpid(childpid, &status, WUNTRACED);
             wait(&status); /* wait for child to exit, and store its status */
+            time_t total_time = time(NULL) - init_time;
             printf("P%i (W): Child's exit code is: %d\n",nro_proceso, WEXITSTATUS(status));
             printf("P%i (W): Child pid: %i\n", nro_proceso, childpid);
 
@@ -150,7 +153,7 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
             {
                 fprintf(file, "%s,", args[i]);
             };
-            fprintf(file, "TIME,%i,0\n", WEXITSTATUS(status));
+            fprintf(file, "%li,%i,0\n", total_time, WEXITSTATUS(status));
             // Cerramos el archivo
             fclose(file);
             printf("P%i (W): Archivo %s generado\n", nro_proceso, filename);

@@ -32,6 +32,7 @@ int main(int argc, char **argv)
     printf("TOTAL PROCESOS: %d\n", total_process);
     printf("TOTAL COLAS: %d\n", Q);
 
+    /* Crea la cola inicial y después el resto*/
     struct Queue* starting_queue;
     starting_queue = malloc(sizeof(struct Queue));
     starting_queue->first = NULL;
@@ -40,18 +41,19 @@ int main(int argc, char **argv)
     /* Crear colas de forma recursiva*/
     create_queues(starting_queue, Q-1);
 
+    /* Usamos el file manager que nos dan para leer el input.txt*/
     InputFile* proob;
     proob = read_file(argv[1]);
     printf("Linea 1: %s\n", proob->lines[0][0]);
     create_process(proob, starting_queue, 3, Q);
 
     /* Variables para guardar los procesos terminados*/
+    /* Los procesos terminados van a un arreglo*/
     struct Process* finished[total_process];
-    int total_finished_process = 0;
 
 
 
-
+    /* Variables para la simulación*/
     int time = 1;
     struct Process* processing;
     processing = malloc(sizeof(struct Process));
@@ -64,44 +66,57 @@ int main(int argc, char **argv)
     /*NEXT EVENT INFORMATION
      * 0 --> WAIT
      * 1 --> QUANTUM
-     * 2 --> S TIMEOUT*/
+     * 2 --> CYCLE*/
 
-    while (total_finished_process < 400){
-
+    /* Scheduler*/
+    while (ready < total_process){
+        /* Reviso si termina algún evento evento*/
         if (time == next_event_time){
+            /* Al proceso del schudeler le toca hacer wait*/
             if (next_event_type == 0 && processing != NULL){
+                /* Aumentamos su prioridad */
                 if (processing->priority != Q-1){
                     processing->priority += 1;
                 }
-                printf("PROCESO HACIENDO WAIT\n");
+                printf("PROCESO ENTRA A WAIT\n");
+                /* Actualizamos sus parámetros*/
                 processing->waiting_since = time;
                 processing->total_time_running += time - processing->time_started_running;
                 processing->next = NULL;
                 processing->status = 2;
                 processing->time_executed_without_wait = 0;
+                /* Lo metemos de vuelta a la cola que corresponda*/
                 insert_in_specific_queue(starting_queue, processing, processing->priority);
                 processing = NULL;
 
             }
 
             if (next_event_type == 1 && processing != NULL){
+                /* Al proceso se le acabó el quantum*/
                 printf("AL PROCESO %d SE LE HA ACABADO EL QUANTUM EN T = %d\n", processing->PID, time);
                 if (processing->priority != 0){
+                    /* Dsiminuimos su prioridad */
                     processing->priority -= 1;
                 }
+                /* Actualizamos sus parámetros*/
                 processing->time_executed_without_wait += time - processing->time_started_running;
                 processing->total_time_running += time - processing->time_started_running;
                 processing->interrumpions += 1;
                 processing->next = NULL;
+                /* Lo metemos donde le corresponda*/
                 insert_in_specific_queue(starting_queue, processing, processing->priority);
                 processing = NULL;
             }
 
             if (next_event_type == 2){
+                /* EL proceso termina*/
                 printf("PROCESO HA TERMINADO\n");
+                /* Actualizamos sus parámetros*/
                 processing->finished_time = time;
                 processing->turnaround_time = processing->finished_time - processing->starting_time;
                 processing->waiting_time = processing->turnaround_time - processing->cycles;
+                processing->next = NULL;
+                /* Lo metemos al arreglo*/
                 finished[ready] = processing;
                 processing = NULL;
                 ready += 1;
@@ -110,24 +125,31 @@ int main(int argc, char **argv)
         }
 
         if (time == S*times_used_S){
+            /* Revisamos si ocurre S*/
             times_used_S += 1;
-            printf("PASANDO EL S\n");
+            printf("------------------------------------------>PASANDO EL S en t = %d\n", time);
+            all_process_back_to_first_queue(starting_queue);
         }
 
         if (processing == NULL){
+            /* Si no hay procesos en el scheduler, buscamos uno*/
             processing = extract_first_ready_process_from_all_queues(starting_queue, time);
 
             if (processing != NULL){
+                /*Si encuentra uno, seteamos sus nuevos parámetros*/
+                processing->next = NULL;
                 processing->time_started_running = time;
                 processing->chosen += 1;
                 if (processing->started == 1){
-                    printf("**********VIRGEN*************************************************\n");
+                    /* Vemos si es que entra por primera vez al scheduler*/
                     processing->response_time = time - processing->starting_time;
                     if (processing->starting_time == 0){
                         processing->response_time -= 1;
                     }
                     processing->started = 2;
                 }
+
+                /* Calculamos el tiempo de todos los posibles eventos*/
                 int quantum = (Q - processing->priority)*q;
                 printf("___________________________________\n");
                 printf("PROCESO: %d\n", processing->PID);
@@ -137,18 +159,21 @@ int main(int argc, char **argv)
 
                 if (quantum < (processing->wait-processing->time_executed_without_wait) &&
                 quantum < (processing->cycles - processing->total_time_running)){
+                    /* Si el quantum es el que viene, lo seteamos*/
                     printf("PROXIMO EVENTO ES QUE SE LE ACABA EL QUANTUM\n");
                     next_event_type = 1;
                     next_event_time = quantum + time;
                 }
                 else if ((processing->wait-processing->time_executed_without_wait) < quantum &&
                          (processing->wait-processing->time_executed_without_wait) < (processing->cycles - processing->total_time_running)){
+                    /* Si el wait es el que viene, lo seteamos*/
                     printf("PROXIMO EVENTO ES QUE VA A HACER WAIT\n");
                     next_event_time = (processing->wait-processing->time_executed_without_wait)+time;
                     next_event_type = 0;
                 }
 
                 else{
+                    /* Si el quantum es el que viene, lo seteamos*/
                     printf("PROXIMO EVENTO ES QUE TERMINA EL CYCLE\n");
                     next_event_type = 2;
                     next_event_time = time + (processing->cycles - processing->total_time_running);
@@ -158,12 +183,12 @@ int main(int argc, char **argv)
         }
 
 
-
+        /* Actualizamos el tiempo*/
         time += 1;
-        total_finished_process += 1;
     }
 
 
+    /* Ejemplo imprimir resumen*/
     printf("_________________________________\n");
     printf("IMPRIMIENDO RESUMEN DE DATOS:\n");
     printf("PROCESO 1: %d\n", finished[0]->PID);
@@ -179,7 +204,13 @@ int main(int argc, char **argv)
 
 
     /* Liberar la memoria y  cerrar los archivos*/
+    for (int i=0; i<total_process;i++){
+        printf("PID: %d\n", finished[i]->PID);
+        free(finished[i]);
+    }
+    free(processing);
     free_memory(starting_queue);
+    input_file_destroy(proob);
     fclose(input_stream);
 
 

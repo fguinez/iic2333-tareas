@@ -4,13 +4,29 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+/* Función para liberar memoria recursivamente de las colas*/
 void free_memory(struct Queue* starting_queue){
     if (starting_queue->next != NULL){
         free_memory(starting_queue->next);
     }
+    struct Process* actual_process;
+    actual_process = starting_queue->first;
+    if (actual_process != NULL) {
+        free_memory_process(actual_process);
+    }
     free(starting_queue);
 }
 
+/* Función para liberar memoria recursivamente de los procesos*/
+void free_memory_process(struct Process* actual_process){
+    if (actual_process->next != NULL){
+        free_memory_process(actual_process->next);
+    }
+    free(actual_process);
+}
+
+/* Función para crear colas recursivamente*/
 void create_queues(struct Queue* actual, int remaining){
     if (remaining > 0){
         struct Queue* new;
@@ -24,6 +40,7 @@ void create_queues(struct Queue* actual, int remaining){
     }
 }
 
+/* Función para crear procesos desde el input*/
 void create_process(InputFile* proob, struct Queue* starting_queue, int total, int Q){
     for (int i = 0; i <total; i++){
         char* name = proob->lines[i][0];
@@ -53,12 +70,72 @@ void create_process(InputFile* proob, struct Queue* starting_queue, int total, i
             new->status = 2;
             new->started = 0;
         }
-        insert_in_queue(starting_queue, new);
+        insert_in_order(starting_queue, new);
 
 
     }
 }
 
+/* Función para insertar los procesos en la primera cola según su tiempo de llegada*/
+int insert_in_order(struct Queue* starting_queue, struct Process* new){
+    /* Caso 1: No hay procesos en la cola*/
+    if (starting_queue->first == NULL){
+        starting_queue->first = new;
+        return 1;
+    }
+    else{
+
+        struct Process* actual_process;
+        actual_process = starting_queue->first;
+        if (actual_process->next == NULL) {
+            /* Caso 2: Solo hay 1 proceso en la cola*/
+            if (actual_process->starting_time >= new->starting_time) {
+                new->next = actual_process;
+                starting_queue->first = new;
+            }
+            else{
+                actual_process->next = new;
+            }
+            return 2;
+        }
+        else{
+            /* Caso 3: Hay más de 1 proceso en la cola*/
+            while (actual_process->next != NULL){
+                if (actual_process->next->starting_time >= new->starting_time){
+                    new->next = actual_process->next;
+                    actual_process->next = new;
+                    return 3;
+                }
+                actual_process = actual_process->next;
+            }
+        }
+
+    }
+    printf("HA HABIDO UN ERROR, QUEDÓ EL SAPO\n");
+    return 5;
+}
+
+/* Función que manda a todos los procesos de vuelta a la primera cola*/
+void all_process_back_to_first_queue(struct Queue* starting_queue){
+    struct Queue* actual_queue;
+    struct Process* actual_process;
+    actual_queue = starting_queue->next;
+    while (actual_queue != NULL){
+        actual_process = actual_queue->first;
+        insert_in_queue(starting_queue, actual_process);
+        /* La cola ahora queda vacía*/
+        actual_queue->first = NULL;
+        actual_queue = actual_queue->next;
+    }
+    actual_process = starting_queue->first;
+    while (actual_process != NULL){
+        /* Hay que cambiar la prioridad de los procesos por la que corresponda*/
+        actual_process->priority = starting_queue->priority;
+        actual_process = actual_process->next;
+    }
+}
+
+/* Función que agrega un proceso al final de una cola que se le da como parámetro*/
 void insert_in_queue(struct Queue* starting_queue, struct Process* new_process){
     if (starting_queue->first == NULL){
         starting_queue->first = new_process;
@@ -74,6 +151,7 @@ void insert_in_queue(struct Queue* starting_queue, struct Process* new_process){
     }
 }
 
+/* Función que agrega un proceso al final de una cola específica, donde solo se indica la prioridad de dicha cola*/
 void insert_in_specific_queue(struct Queue* starting_queue, struct Process* actual_process, int priority){
     struct Queue* tmp;
     tmp = starting_queue;
@@ -83,6 +161,7 @@ void insert_in_specific_queue(struct Queue* starting_queue, struct Process* actu
     insert_in_queue(tmp, actual_process);
 }
 
+/* Función que retorna el proceso de mayor prioridad en estado ready de todos para 1 cola*/
 struct Process* extract_first_ready_process(struct Queue* actual_queue, int time){
     if (actual_queue->first == NULL){
         return NULL;
@@ -91,13 +170,14 @@ struct Process* extract_first_ready_process(struct Queue* actual_queue, int time
         struct Process* actual_process;
         struct Process* retorner;
         actual_process = actual_queue->first;
-
+        /*Reviso primero si es que es el primer elemento de la lista el que tiene que salir*/
         /* Si está en waiting, veo si es que ya debería haber empezado */
         if (actual_process->status == 2){
             if (actual_process->starting_time <= time && actual_process->started == 0){
                 actual_process->started = 1;
                 actual_process->status = 1;
             }
+            /* Si está en waiting, veo si es que ya terminó su waiting delay */
             if (time - actual_process->waiting_since >= actual_process->waiting_delay && actual_process->started == 2){
                 actual_process->status = 1;
             }
@@ -108,7 +188,7 @@ struct Process* extract_first_ready_process(struct Queue* actual_queue, int time
             actual_queue->first = actual_process->next;
             return actual_process;
         }
-
+        /* Ahora empiezo a buscar en toda la cola */
         while (actual_process->next != NULL){
             /* Si está en waiting, veo si es que ya debería haber empezado */
             if (actual_process->next->status == 2){
@@ -116,7 +196,7 @@ struct Process* extract_first_ready_process(struct Queue* actual_queue, int time
                     actual_process->next->status = 1;
                     actual_process->next->started = 1;
                 }
-
+                /* Si está en waiting, veo si es que ya terminó su waiting delay */
                 if (time - actual_process->next->waiting_since >= actual_process->next->waiting_delay  && actual_process->started == 2){
                     actual_process->next->status = 1;
                 }
@@ -134,6 +214,7 @@ struct Process* extract_first_ready_process(struct Queue* actual_queue, int time
     }
 }
 
+/* Función que retorna el proceso de mayor prioridad en estado ready de todos para todas las colas*/
 struct Process* extract_first_ready_process_from_all_queues(struct Queue* starting_queue, int time){
     struct Queue* actual_queue;
     struct Process* actual_process;

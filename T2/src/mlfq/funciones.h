@@ -45,9 +45,12 @@ struct Queue{
 };
 
 void free_memory(struct Queue*);
+void free_memory_process(struct Process*);
 void create_queues(struct Queue*, int);
 void create_process(InputFile*, struct Queue*, int, int);
 void insert_in_queue(struct Queue*, struct Process*);
 void insert_in_specific_queue(struct Queue*, struct Process*, int);
 struct Process* extract_first_ready_process(struct Queue*, int);
 struct Process* extract_first_ready_process_from_all_queues(struct Queue*, int);
+int insert_in_order(struct Queue*, struct Process*);
+void all_process_back_to_first_queue(struct Queue*);

@@ -10,7 +10,7 @@
 #include <time.h>
 extern char* proceso_global;
 extern struct lista lista_hijos;
-
+extern struct worker_data lista_workers;
 
 
 
@@ -113,7 +113,7 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
     int n = atoi(strsep(&instructions, ","));
     
     // Guardamos un array con el ejecutable y los n argumentos
-    char** args = malloc(n+1 * sizeof(char*));
+    char** args = malloc(n+2 * sizeof(char*));
     args[0] = executable;
     for (int i=1; i<n+1; i++)
     {
@@ -123,6 +123,18 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
             strip(args[i]);              // Quita \n del último argumento
         }
     }
+    for (int i=0; i<n+1; i++)
+    {
+        printf("%s,", args[i]);
+    };
+    printf("\n");
+
+    /* Guardamos el worker en lista_workers */
+    pid_t worker_pid = getpid();
+    time_t init_time = -1;
+    time_t total_time = -1;
+    int status = -1;
+    insert_worker(&worker_pid, &args, &init_time, &total_time, &status);
 
     /* Creamos un hijo de worker para realizar exec */
     pid_t childpid;
@@ -130,16 +142,15 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
 
     if (childpid >= 0)  /* El fork se realizó con éxito */
     {
-        time_t init_time = time(NULL);
+        init_time = time(NULL);
         if (childpid == 0)  /* Proceso hijo */
         {
             //printf("P%i (W): Voy a ejecutar %s\n", nro_proceso, executable);
             execvp(executable, args);
         } else {    /* Proceso padre worker */
-            int status;
             //waitpid(childpid, &status, WUNTRACED);
             wait(&status); /* wait for child to exit, and store its status */
-            time_t total_time = time(NULL) - init_time;
+            total_time = time(NULL) - init_time;
             printf("P%i (W): Child's exit code is: %d\n",nro_proceso, WEXITSTATUS(status));
             printf("P%i (W): Child pid: %i\n", nro_proceso, childpid);
 
@@ -231,9 +242,9 @@ void signal_sigabrt_handler(int sig){
 void signal_sigabrt_handler_worker(int sig){
     printf("HA LLEGADO UNA SEÑAL DE ABRT A UN WORKER\n");
     /* Acá se debiesen crear el archivo diciendo que el proceso fue interrumpido*/
-
     printf("WORKER ABORTADO\n");
     pid_t actual = getpid();
+    printf("actual: %i\n", actual);
     kill(actual, SIGKILL);
 
 }
@@ -241,7 +252,8 @@ void signal_sigabrt_handler_worker(int sig){
 
 /* Función que inserta valores en la variable global lista_hijos*/
 /* Es una lista enlazada. Está definida en el header de funciones*/
-void insert(pid_t* hijo){
+void insert(pid_t* hijo)
+{
     if (lista_hijos.hijo == 0){
         lista_hijos.hijo = *hijo;
         lista_hijos.sig = NULL;
@@ -265,3 +277,60 @@ void insert(pid_t* hijo){
     }
 
 }
+
+
+
+/* Función que inserta valores en la variable global lista_workers */
+/* Es una lista enlazada. Está definida en el header de funciones */
+void insert_worker(pid_t* pid, char*** args, time_t* init_time, time_t* total_time, int* status)
+{
+    if (lista_workers.pid == 0)
+    {
+        lista_workers.pid = *pid;
+        lista_workers.args = *args;
+        lista_workers.init_time = *init_time;
+        lista_workers.total_time = *total_time;
+        lista_workers.status = *status;
+        lista_workers.sig = NULL;
+    } else
+    {
+        struct worker_data* q;
+        struct worker_data* p;
+        q = malloc(sizeof(struct worker_data));
+        q->sig = NULL;
+        q->pid = *pid;
+        q->args = *args;
+        q->init_time = *init_time;
+        q->total_time = *total_time;
+        q->status = *status;
+        p = lista_workers.sig;
+        if (p == NULL)
+        {
+            lista_workers.sig = q;
+        } else
+        {
+            while(p->sig != NULL)
+            {
+                p = p->sig;
+            };
+            p->sig = q;
+        };
+    };
+};
+
+
+/* Retorna el worker en lista_workers que coincide con wpid*/
+struct worker_data buscar_worker(pid_t* wpid)
+{
+    struct worker_data* actual;
+    if (lista_workers.pid == *wpid)
+    {
+        return lista_workers;
+    };
+    actual = lista_workers.sig;
+    while (actual->pid != *wpid)
+    {
+        actual = actual->sig;
+    };
+    return *actual;
+};

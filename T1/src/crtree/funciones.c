@@ -62,21 +62,30 @@ void strip(char *s)
 
 // CREADORES DE HIJOS
 /* Crea los hijos de un proceso manager*/
-void crear_hijos_manager(char* proceso, char* filename){
+void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
     char* ident = strsep(&proceso, ",");
     int timeout = atoi(strsep(&proceso, ","));
-    char* hijos = strsep(&proceso, ",");
+    int n = atoi(strsep(&proceso, ","));
     int status;
-    /* Para cada hijo, hacemos fork y execve*/
-    for (int i = 0; i<atoi(hijos); i++){
-        /* Leo el número del proceso hijo*/
-        char* num = strsep(&proceso, ",");
 
+    /* Crea un array con los hijos*/
+    char** hijos = malloc(n+2 * sizeof(char*));
+    for (int i=0; i<n; i++)
+    {
+        hijos[i] = strsep(&proceso, ",");
+        if (i+1 == n)
+        {
+            strip(hijos[i]);              // Quita \n del último hijo
+        };
+    };
+
+    /* Para cada hijo, hacemos fork y execve*/
+    for (int i = 0; i<n; i++){
         /* Creo una lista con los parámetros para el execve*/
         char* args[4];
         args[0] = "./crtree";
-        args[1] = filename;
-        args[2] = num;
+        args[1] = input_filename;
+        args[2] = hijos[i];
         args[3] = NULL;
 
         /* Hacemos fork*/
@@ -94,12 +103,37 @@ void crear_hijos_manager(char* proceso, char* filename){
 
     /* Se setean las señales dependiendo si el proceso de root o nonroot*/
 
+    // Definimos el nombre del archivo de salida
+    char filename[10];
+    sprintf(filename, "%d.txt", nro_proceso);
+    // Se crea el archivo del manager
+    FILE* file = fopen(filename, "w");
+
     /* El proceso padre se queda esperando a que todos los hijos terminen*/
-    for (int i = 0; i<atoi(hijos); i++){
+    for (int i = 0; i<n; i++){
         wait(&status);
         //waitpid(childpids[i], NULL; 0);
 
-    }
+        /* Se escribe el archivo del hijo en el archivo del padre */
+        // Se define el nombre del archivo del hijo
+        char child_filename[10];
+        sprintf(child_filename, "%s.txt", hijos[i]);
+        // Se abre en el archivo hijo
+        FILE* child_file = fopen(child_filename, "r");
+        // Comprueba que el archivo exista
+        if(!child_file)
+        {
+            printf("P%i    : No se ha encontrado el archivo %s\n", nro_proceso, child_filename);
+            continue;
+        };
+        // Se escribe hijo en padre
+        char line[200];
+        while (fgets(line, 200, child_file) != NULL) 
+        { 
+            fprintf(file, "%s", line);
+        };
+    };
+    printf("P%i    : Archivo %s generado\n", nro_proceso, filename);
 };
 
 
@@ -123,18 +157,13 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
             strip(args[i]);              // Quita \n del último argumento
         }
     }
-    for (int i=0; i<n+1; i++)
-    {
-        printf("%s,", args[i]);
-    };
-    printf("\n");
 
     /* Guardamos el worker en lista_workers */
     pid_t worker_pid = getpid();
     time_t init_time = -1;
     time_t total_time = -1;
     int status = -1;
-    insert_worker(&worker_pid, &args, &init_time, &total_time, &status);
+    //insert_worker(&worker_pid, &args, &init_time, &total_time, &status);
 
     /* Creamos un hijo de worker para realizar exec */
     pid_t childpid;
@@ -281,7 +310,7 @@ void insert(pid_t* hijo)
 
 
 /* Función que inserta valores en la variable global lista_workers */
-/* Es una lista enlazada. Está definida en el header de funciones */
+/* Es una lista enlazada. Está definida en el header de funciones *//*
 void insert_worker(pid_t* pid, char*** args, time_t* init_time, time_t* total_time, int* status)
 {
     if (lista_workers.pid == 0)
@@ -318,8 +347,8 @@ void insert_worker(pid_t* pid, char*** args, time_t* init_time, time_t* total_ti
     };
 };
 
-
-/* Retorna el worker en lista_workers que coincide con wpid*/
+*/
+/* Retorna el worker en lista_workers que coincide con wpid*//*
 struct worker_data buscar_worker(pid_t* wpid)
 {
     struct worker_data* actual;
@@ -334,3 +363,4 @@ struct worker_data buscar_worker(pid_t* wpid)
     };
     return *actual;
 };
+*/

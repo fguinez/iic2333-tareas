@@ -41,13 +41,12 @@ int main(int argc, char **argv)
 
     /* Sacamos el índice y el total de procesos */
     int indice = atoi(argv[2]);
-    printf("EL INDICE ES: %d\n", indice);
     int total_procesos;
     fscanf(input_stream, "%d", &total_procesos);
 
     /* Como ya abrimos el archivo y ya tenemos el índice, buscamos el proceso asociado al índice */
     char* proceso = buscar_linea(argv[1], indice);
-    printf("PROCESO EN DESAROLLO: %s\n", proceso);
+    printf("P%i    : Ejecutando: %s", indice, proceso);
     char* proceso_copia;
     proceso_copia = strdup(proceso);
     actualizar(proceso_copia);
@@ -57,20 +56,20 @@ int main(int argc, char **argv)
 
 
     if (!strcmp(ident, "R")){
-        printf("P%i (R) Iniciando\n", indice);
+        printf("P%i (R): Iniciando...\n", indice);
 
         /* Esto extrae los valores de los otros parḿetros del proceso*/
         char* timeout = strsep(&proceso, ",");
         char* hijos = strsep(&proceso, ",");
-        printf("P%i (R) TIMEOUT: %s\n", indice, timeout);
-        printf("P%i (R) TOTAL DE HIJOS: %s\n", indice, hijos);
+        printf("P%i (R): TIMEOUT: %s\n", indice, timeout);
+        printf("P%i (R): TOTAL DE HIJOS: %s\n", indice, hijos);
 
         /* Acá falta el TIMEOUT que vaya en paralelo con la función crear hijos*/
         signal(SIGINT, &signal_sigint_handler_root);
         signal(SIGABRT, &signal_sigint_handler_root);
 
-        crear_hijos_manager(proceso_copia, argv[1]);
-        printf("P%i (R) Terminado\n", indice);
+        crear_hijos_manager(proceso_copia, argv[1], indice);
+        printf("P%i (R): Terminado\n", indice);
         printf("++++++++++++++++++++++++\n");
     }
 
@@ -86,7 +85,7 @@ int main(int argc, char **argv)
         signal(SIGINT, &signal_sigint_handler_nonroot);
         signal(SIGABRT, &signal_sigabrt_handler);
 
-        crear_hijos_manager(proceso_copia, argv[1]);
+        crear_hijos_manager(proceso_copia, argv[1], indice);
         printf("P%i (M): Terminado\n", indice);
 
         /* Acá el proceso manager debiese manejar los archivos de sus procesos workers y juntarlos todos

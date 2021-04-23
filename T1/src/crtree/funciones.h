@@ -3,7 +3,7 @@
 
 
 char* buscar_linea(const char*, int);
-void crear_hijos_manager(char*, char*);
+void crear_hijos_manager(char*, char*, int);
 void crear_hijo_worker(char*, int);
 void actualizar(char* );
 void signal_sigint_handler_root(int);

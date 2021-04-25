@@ -7,6 +7,8 @@
 #include "funciones.h"
 #include <string.h>
 #include <signal.h>
+#include <pthread.h>
+
 
 /* Hay dos variables globales */
 /* proceso_global es un puntero a un string que tiene información del proceso actual que se está ejecutando */
@@ -16,6 +18,8 @@
 char* proceso_global;
 struct lista* lista_hijos;
 struct worker_data* lista_workers;
+
+
 
 
 int main(int argc, char **argv)
@@ -135,4 +139,4 @@ int main(int argc, char **argv)
     };
 
     return 0;
-}
+};

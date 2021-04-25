@@ -38,4 +38,6 @@ struct worker_data* buscar_worker(pid_t*);
 
 void guardar_archivo(char, int);
 
+void* check_timeout(void*);
+
 //void lista_workers_init();

@@ -8,9 +8,18 @@
 #include <sys/types.h>
 #include <string.h>
 #include <time.h>
+
+#include <pthread.h>
+#include <errno.h>
+
+#define NUM_THREADS     1
+
 extern char* proceso_global;
 extern struct lista* lista_hijos;
 extern struct worker_data* lista_workers;
+
+
+
 
 
 
@@ -81,6 +90,12 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
         };
     };
 
+    // Empieza a correr timeout
+    pthread_t tid;
+    int* arg = malloc(sizeof(int));
+    *arg = timeout;
+    pthread_create(&tid, NULL, check_timeout, arg);
+
     /* Para cada hijo, hacemos fork y execve*/
     for (int i = 0; i<n; i++){
         /* Creo una lista con los parámetros para el execve*/
@@ -100,6 +115,8 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
         }
         else{
             int hijo = atoi(hijos[i]);
+
+            // Insertamos al hijo en lista_hijos
             insert(&childpid, &hijo, &nro_proceso);
         }
     }
@@ -139,6 +156,10 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
         free(child_filename);
         fclose(child_file);
     };
+    // Cerramos el checkeo de timeout
+    pthread_cancel(tid);
+
+
     printf("P%i    : Archivo %s generado\n", nro_proceso, filename);
 
     // Liberamos memoria
@@ -442,4 +463,32 @@ void guardar_archivo(char type, int nro_padre)
     };
     printf("P%i (%c): Archivo %s generado\n", nro_padre, type, filename);
     fclose(file);
+};
+
+
+
+
+
+
+// TIMEOUT
+/* Corta un proceso si ya cumplió su timeout */
+void* check_timeout(void* timeout)
+{
+    time_t max_time = *((int*) timeout);
+
+    time_t init_time = time(NULL);
+
+    while (time(NULL) - init_time < max_time);
+
+    printf("P%i    : Se acabó el tiempo para mis hijos (%li segundos)\n", lista_hijos->nro_padre, max_time);
+    struct lista* actual;
+    actual = lista_hijos;
+    while (actual != NULL)
+    {
+        kill(actual->hijo, SIGABRT);
+        actual = actual->sig;
+    };
+    free(timeout);
+    void* a = NULL;
+    return a;
 };

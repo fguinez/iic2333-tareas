@@ -194,10 +194,21 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
     time_t init_time = -1;
     time_t total_time = -1;
     int status = -1;
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////  ALERTA BUG DETECTADO  ////  INICIO ZONA EN CUARENTENA  ////  ALERTA BUG DETECTADO  //////
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    //   Ver la función insert_worker para más detalles
+    //
+    ////////////////////////////////////////////////////////////////////////////////////////////////// 
     printf("||||||| entrando del worker insert\n");/////////////////////////////////////////////////////////////////
     printf("||||||| %i, %s, %li, %li, %i, %i, %i\n", worker_pid, args[0], init_time, total_time, status, nro_proceso, n);/////////////////////////////////////////////////////////////////
     insert_worker(&worker_pid, &args, &init_time, &total_time, &status, &nro_proceso, &n);
     printf("||||||| saliendo del worker insert\n");/////////////////////////////////////////////////////////////////
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////  ALERTA BUG DETECTADO  ////  FINAL ZONA EN CUARENTENA  ////  ALERTA BUG DETECTADO  ///////
+    //////////////////////////////////////////////////////////////////////////////////////////////////
 
     /* Creamos un hijo de worker para realizar exec */
     pid_t childpid;
@@ -305,6 +316,22 @@ void signal_sigabrt_handler(int sig){
     kill(actual, SIGKILL);
 };
 
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+///////  ALERTA BUG DETECTADO  ////  INICIO ZONA EN CUARENTENA  ////  ALERTA BUG DETECTADO  //////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//   Este bug consiste en que, independiente desde dónde se haga SIGABRT a un worker, este
+//   recibirá la señal sin pasar por el handler, muriendo sin escribir su archivo.
+// 
+//   A mi entender, este handler se está llamando como cualquier otro, por lo que no entiendo
+//   porqué no es utilizado cuando los otros handlers funcionan bien.
+// 
+//   Probé agregando:
+//           signal(SIGABRT, &signal_sigabrt_handler_worker);
+//   en varias partes del código, pero no resultó.
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////
 void signal_sigabrt_handler_worker(int sig){
     // Obtenemos el pid correspondiente
     pid_t wpid = getpid();
@@ -339,7 +366,10 @@ void signal_sigabrt_handler_worker(int sig){
     printf("P%i (W): Archivo %s generado\n", worker->nro_proceso, filename);
     kill(wpid, SIGKILL);
     printf("P%i (W): Worker %i abortado\n", worker->nro_proceso, wpid);
-}
+};
+//////////////////////////////////////////////////////////////////////////////////////////////////
+///////  ALERTA BUG DETECTADO  ////  FINAL ZONA EN CUARENTENA  ////  ALERTA BUG DETECTADO  ///////
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 /* Función que inserta valores en la variable global lista_hijos*/
@@ -376,9 +406,27 @@ void insert_worker(pid_t* pid, char*** args, time_t* init_time, time_t* total_ti
 {
     struct worker_data* nuevo_worker;
     struct worker_data* actual_worker;
-    printf("||||||| entrando al worker malloc\n");/////////////////////////////////////////////////////////////////
-    nuevo_worker = malloc(sizeof(struct worker_data));
-    printf("||||||| saliendo del worker malloc\n");/////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////  ALERTA BUG DETECTADO  ////  INICIO ZONA EN CUARENTENA  ////  ALERTA BUG DETECTADO  //////
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    //   El problema se presenta al ejecutar: ./crtree input.txt 4
+    //   
+    //   Lo cual, al ejecutar malloc entrega:
+    //                    malloc(): invalid size (unsorted)
+    //                    Segmentation fault (core dumped)
+    //   
+    //   He probado diferentes cosas, pero ninguna funciona. Igual, en general el input 4 ha estado
+    //   generando problemas desde el comienzo, es un input con 9 argumentos, pero eso no debería ser
+    //   una fuente de error.
+    //
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    printf("||||||| entrando al worker malloc\n");////////////////////////////////////////////////////
+    nuevo_worker = malloc(sizeof(struct worker_data));   //    <-- Aquí se desata el infierno     ////
+    printf("||||||| saliendo del worker malloc\n");///////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////  ALERTA BUG DETECTADO  ////  FINAL ZONA EN CUARENTENA  ////  ALERTA BUG DETECTADO  ///////
+    ////////////////////////////////////////////////////////////////////////////////////////////////// 
     nuevo_worker->pid =         *pid;
     nuevo_worker->args =        *args;
     nuevo_worker->init_time =   *init_time;

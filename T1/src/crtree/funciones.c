@@ -10,7 +10,7 @@
 #include <time.h>
 extern char* proceso_global;
 extern struct lista lista_hijos;
-extern struct worker_data lista_workers;
+extern struct worker_data* lista_workers;
 
 
 
@@ -116,7 +116,8 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
 
         /* Se escribe el archivo del hijo en el archivo del padre */
         // Se define el nombre del archivo del hijo
-        char child_filename[10];
+        char* child_filename;
+        child_filename = malloc(sizeof(char) * (strlen(hijos[i]) + 6));
         sprintf(child_filename, "%s.txt", hijos[i]);
         // Se abre en el archivo hijo
         FILE* child_file = fopen(child_filename, "r");
@@ -127,7 +128,7 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
             continue;
         };
         // Se escribe hijo en padre
-        char line[200];
+        char line[300];
         while (fgets(line, 200, child_file) != NULL) 
         { 
             fprintf(file, "%s", line);
@@ -157,13 +158,16 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
             strip(args[i]);              // Quita \n del último argumento
         }
     }
-
-    /* Guardamos el worker en lista_workers */
+    
+    /* Guardamos el worker en struct worker */
     pid_t worker_pid = getpid();
     time_t init_time = -1;
     time_t total_time = -1;
     int status = -1;
-    //insert_worker(&worker_pid, &args, &init_time, &total_time, &status);
+    printf("||||||| entrando del worker insert\n");/////////////////////////////////////////////////////////////////
+    printf("||||||| %i, %s, %i, %i, %i, %i, %i\n", worker_pid, args[0], init_time, total_time, status, nro_proceso, n);/////////////////////////////////////////////////////////////////
+    insert_worker(&worker_pid, &args, &init_time, &total_time, &status, &nro_proceso, &n);
+    printf("||||||| saliendo del worker insert\n");/////////////////////////////////////////////////////////////////
 
     /* Creamos un hijo de worker para realizar exec */
     pid_t childpid;
@@ -269,13 +273,39 @@ void signal_sigabrt_handler(int sig){
 }
 
 void signal_sigabrt_handler_worker(int sig){
-    printf("HA LLEGADO UNA SEÑAL DE ABRT A UN WORKER\n");
-    /* Acá se debiesen crear el archivo diciendo que el proceso fue interrumpido*/
-    printf("WORKER ABORTADO\n");
-    pid_t actual = getpid();
-    printf("actual: %i\n", actual);
-    kill(actual, SIGKILL);
+    // Obtenemos el pid correspondiente
+    pid_t wpid = getpid();
 
+    // Buscamos los datos del worker correspondiente a wpid
+    struct worker_data* worker;
+    worker = buscar_worker(&wpid);
+
+    // Avisamos del ABRT
+    printf("P%i (W): Abortando worker %i...\n", worker->nro_proceso, wpid);
+
+    // Definimos el nombre del archivo de salida
+    char filename[10];
+    sprintf(filename, "%d.txt", worker->nro_proceso);
+    // Abrimos el archivo
+    FILE* file = fopen(filename, "w");
+    // Escribimos el output en el archivo
+    for (int i=0; i<worker->n+1; i++)
+    {
+        fprintf(file, "%s,", worker->args[i]);
+    };
+    if (worker->total_time != -1)
+    {
+        fprintf(file, "%li,%i,1\n", worker->total_time, WEXITSTATUS(worker->status));
+    } else
+    {
+        fprintf(file, "%li,%i,1\n", time(NULL) - worker->init_time, WEXITSTATUS(worker->status));
+    }
+        
+    // Cerramos el archivo
+    fclose(file);
+    printf("P%i (W): Archivo %s generado\n", worker->nro_proceso, filename);
+    kill(wpid, SIGKILL);
+    printf("P%i (W): Worker %i abortado\n", worker->nro_proceso, wpid);
 }
 
 
@@ -309,58 +339,47 @@ void insert(pid_t* hijo)
 
 
 
-/* Función que inserta valores en la variable global lista_workers */
-/* Es una lista enlazada. Está definida en el header de funciones *//*
-void insert_worker(pid_t* pid, char*** args, time_t* init_time, time_t* total_time, int* status)
+
+// Función que inserta valores en la variable global lista_workers
+// Es una lista enlazada. Está definida en el header de funciones
+void insert_worker(pid_t* pid, char*** args, time_t* init_time, time_t* total_time, int* status, int* nro_proceso, int* n)
 {
-    if (lista_workers.pid == 0)
+    struct worker_data* nuevo_worker;
+    struct worker_data* actual_worker;
+    printf("||||||| entrando al worker malloc\n");/////////////////////////////////////////////////////////////////
+    nuevo_worker = malloc(sizeof(struct worker_data));
+    printf("||||||| saliendo del worker malloc\n");/////////////////////////////////////////////////////////////////
+    nuevo_worker->pid =         *pid;
+    nuevo_worker->args =        *args;
+    nuevo_worker->init_time =   *init_time;
+    nuevo_worker->total_time =  *total_time;
+    nuevo_worker->status =      *status;
+    nuevo_worker->nro_proceso = *nro_proceso;
+    nuevo_worker->n =           *n;
+    nuevo_worker->sig =         NULL;
+    actual_worker = lista_workers;
+    if (actual_worker == NULL)
     {
-        lista_workers.pid = *pid;
-        lista_workers.args = *args;
-        lista_workers.init_time = *init_time;
-        lista_workers.total_time = *total_time;
-        lista_workers.status = *status;
-        lista_workers.sig = NULL;
+        actual_worker = nuevo_worker;
     } else
     {
-        struct worker_data* q;
-        struct worker_data* p;
-        q = malloc(sizeof(struct worker_data));
-        q->sig = NULL;
-        q->pid = *pid;
-        q->args = *args;
-        q->init_time = *init_time;
-        q->total_time = *total_time;
-        q->status = *status;
-        p = lista_workers.sig;
-        if (p == NULL)
+        while(actual_worker->sig != NULL)
         {
-            lista_workers.sig = q;
-        } else
-        {
-            while(p->sig != NULL)
-            {
-                p = p->sig;
-            };
-            p->sig = q;
+            actual_worker = actual_worker->sig;
         };
+        actual_worker->sig = nuevo_worker;
     };
 };
 
-*/
-/* Retorna el worker en lista_workers que coincide con wpid*//*
-struct worker_data buscar_worker(pid_t* wpid)
+
+// Retorna el worker en lista_workers que coincide con wpid
+struct worker_data* buscar_worker(pid_t* wpid)
 {
     struct worker_data* actual;
-    if (lista_workers.pid == *wpid)
-    {
-        return lista_workers;
-    };
-    actual = lista_workers.sig;
+    actual = lista_workers;
     while (actual->pid != *wpid)
     {
         actual = actual->sig;
     };
-    return *actual;
+    return actual;
 };
-*/

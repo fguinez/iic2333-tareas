@@ -15,6 +15,7 @@
 /* Puedes usar estas variables en cualquier archivo. Las programé para que se actualizaran según corresponda */
 char* proceso_global;
 struct lista lista_hijos;
+struct worker_data* lista_workers = NULL;
 
 
 int main(int argc, char **argv)

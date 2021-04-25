@@ -18,10 +18,10 @@ struct worker_data {
     time_t init_time;
     time_t total_time;
     int status;
+    int nro_proceso;
+    int n;
     struct worker_data* sig;
 };
-
-struct worker_data *creanodo2();
 
 struct lista {
     pid_t hijo;
@@ -31,4 +31,7 @@ struct lista {
 
 struct lista *creanodo();
 void insert(pid_t*);
-void insert_worker(pid_t*, char***, time_t*, time_t*, int*);
+void insert_worker(pid_t*, char***, time_t*, time_t*, int*, int*, int*);
+struct worker_data* buscar_worker(pid_t*);
+
+//void lista_workers_init();

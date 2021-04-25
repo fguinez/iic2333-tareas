@@ -132,7 +132,7 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
     /* El proceso padre se queda esperando a que todos los hijos terminen*/
     for (int i = 0; i<n; i++){
         wait(&status);
-        //waitpid(childpids[i], NULL; 0);
+        //waitpid(childpid[i], NULL, WNOHANG);
 
         /* Se escribe el archivo del hijo en el archivo del padre */
         // Se define el nombre del archivo del hijo

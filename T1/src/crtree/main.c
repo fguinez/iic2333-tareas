@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 
     /* Como ya abrimos el archivo y ya tenemos el índice, buscamos el proceso asociado al índice */
     char* proceso = buscar_linea(argv[1], indice);
-    printf("P%i    : Ejecutando: %s", indice, proceso);
+    printf("P%i    : Ejecutando: %s\n", indice, proceso);
     char* proceso_copia;
     proceso_copia = strdup(proceso);
     actualizar(proceso_copia);

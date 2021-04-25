@@ -14,7 +14,7 @@
  * ejecutando actualmente*/
 /* Puedes usar estas variables en cualquier archivo. Las programé para que se actualizaran según corresponda */
 char* proceso_global;
-struct lista lista_hijos;
+struct lista* lista_hijos;
 struct worker_data* lista_workers = NULL;
 
 
@@ -57,13 +57,13 @@ int main(int argc, char **argv)
 
 
     if (!strcmp(ident, "R")){
-        printf("P%i (R): Iniciando...\n", indice);
+        printf("P%i (R): Iniciando proceso %i...\n", indice, getpid());
 
         /* Esto extrae los valores de los otros parḿetros del proceso*/
         char* timeout = strsep(&proceso, ",");
         char* hijos = strsep(&proceso, ",");
-        printf("P%i (R): TIMEOUT: %s\n", indice, timeout);
-        printf("P%i (R): TOTAL DE HIJOS: %s\n", indice, hijos);
+        printf("P%i (R): timeout: %s\n", indice, timeout);
+        printf("P%i (R): Total de hijos: %s\n", indice, hijos);
 
         /* Acá falta el TIMEOUT que vaya en paralelo con la función crear hijos*/
         signal(SIGINT, &signal_sigint_handler_root);
@@ -75,12 +75,12 @@ int main(int argc, char **argv)
     }
 
     else if (!strcmp(ident, "M")){
-        printf("P%i (M): Iniciando\n", indice);
+        printf("P%i (M): Iniciando proceso %i...\n", indice, getpid());
         /* Esto extrae los valores de los otros parḿetros del proceso*/
         char* timeout = strsep(&proceso, ",");
         char* hijos = strsep(&proceso, ",");
-        printf("P%i (M): TIMEOUT: %s\n", indice, timeout);
-        printf("P%i (M): TOTAL DE HIJOS: %s\n", indice, hijos);
+        printf("P%i (M): timeout: %s\n", indice, timeout);
+        printf("P%i (M): Total de hijos: %s\n", indice, hijos);
 
         /* Acá falta el TIMEOUT que vaya en paralelo con la función crear hijos*/
         signal(SIGINT, &signal_sigint_handler_nonroot);
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
     }
 
     else{
-        printf("P%i (W): Iniciando...\n", indice);
+        printf("P%i (W): Iniciando proceso %i...\n", indice, getpid());
         signal(SIGINT, &signal_sigint_handler_nonroot);
         signal(SIGABRT, &signal_sigabrt_handler_worker);
         

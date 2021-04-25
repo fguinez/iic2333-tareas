@@ -9,7 +9,7 @@
 #include <string.h>
 #include <time.h>
 extern char* proceso_global;
-extern struct lista lista_hijos;
+extern struct lista* lista_hijos;
 extern struct worker_data* lista_workers;
 
 
@@ -32,6 +32,7 @@ char* buscar_linea(const char* input, int nro_proceso){
             char* pedro;
             pedro = malloc(sizeof(char) * (strlen(line) + 1));
             strcpy(pedro, line);
+            fclose(input_stream);
             return pedro;
         }
         else
@@ -39,6 +40,7 @@ char* buscar_linea(const char* input, int nro_proceso){
             count++;
         }
     }
+    fclose(input_stream);
     return 0;
 }
 
@@ -97,7 +99,8 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
             execve("./crtree", args, NULL);
         }
         else{
-            insert(&childpid);
+            int hijo = atoi(hijos[i]);
+            insert(&childpid, &hijo, &nro_proceso);
         }
     }
 
@@ -133,8 +136,10 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
         { 
             fprintf(file, "%s", line);
         };
+        fclose(child_file);
     };
     printf("P%i    : Archivo %s generado\n", nro_proceso, filename);
+    fclose(file);
 };
 
 
@@ -165,7 +170,7 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
     time_t total_time = -1;
     int status = -1;
     printf("||||||| entrando del worker insert\n");/////////////////////////////////////////////////////////////////
-    printf("||||||| %i, %s, %i, %i, %i, %i, %i\n", worker_pid, args[0], init_time, total_time, status, nro_proceso, n);/////////////////////////////////////////////////////////////////
+    printf("||||||| %i, %s, %li, %li, %i, %i, %i\n", worker_pid, args[0], init_time, total_time, status, nro_proceso, n);/////////////////////////////////////////////////////////////////
     insert_worker(&worker_pid, &args, &init_time, &total_time, &status, &nro_proceso, &n);
     printf("||||||| saliendo del worker insert\n");/////////////////////////////////////////////////////////////////
 
@@ -175,6 +180,8 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
 
     if (childpid >= 0)  /* El fork se realizó con éxito */
     {
+        signal(SIGINT, &signal_sigint_handler_nonroot);
+        signal(SIGABRT, &signal_sigabrt_handler_worker);
         init_time = time(NULL);
         if (childpid == 0)  /* Proceso hijo */
         {
@@ -208,69 +215,69 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
 
 
 
+
+
 // SEÑALES
 /* Función que maneja las señales de SIGINT para procesos root*/
 void signal_sigint_handler_root(int sig){
-    printf("HA LLEGADO UNA SEÑAL A ROOT\n");
-    printf("SE ENVIARÁ SIGABRT A TODOS SUS HIJOS\n");
-    if (lista_hijos.hijo == 0){
-        printf("NO HAY HIJOS\n");
-    }
-    else if (lista_hijos.sig == NULL){
-        printf("ENVIANDO SEÑAL A 1 HIJO\n");
-        kill(lista_hijos.hijo, SIGABRT);
+    printf("   (R): Ha llegado un SIGINT a ROOT\n");
+    printf("   (R): Se enviará SIGABRT a todos sus hijos\n");
+    if (lista_hijos->hijo == 0){
+        printf("   (R): No hay hijos\n");
     }
     else{
-        kill(lista_hijos.hijo, SIGABRT);
         struct lista* p;
-        p = lista_hijos.sig;
-        kill(p->hijo, SIGABRT);
+        int nro_padre = lista_hijos->nro_padre;
+        p = lista_hijos;
+        printf("P%i (R): Enviando señal a hijo %i\n", nro_padre, lista_hijos->hijo);
+        kill(lista_hijos->hijo, SIGABRT);
         while (p->sig!= NULL){
             p = p->sig;
+            printf("P%i (R): Enviando señal a hijo %i\n", nro_padre, p->hijo);
             kill(p->hijo, SIGABRT);
-        }
-    }
-
+        };
+        // Se guarda el archivo de salida
+        char type = 'R';
+        guardar_archivo(type, nro_padre);
+    };
     /* Finalmente le hago abort al proceso root */
     pid_t actual = getpid();
     kill(actual, SIGKILL);
-
-
-}
+};
 
 /* Función que maneja las señales de SIGINT para procesos no root*/
 void signal_sigint_handler_nonroot(int sig){
-    printf("HA LLEGADO UNA SEÑAL DE SIGINT A UN M/W\n");
-    printf("LA SEÑAL SE OMITE\n");
+    printf("      : Ha llegado una señal SIGINT a un M/W\n");
+    printf("      : La señal se omite\n");
 }
 
 void signal_sigabrt_handler(int sig){
-    printf("HA LLEGADO UNA SEÑAL DE SIGABRT A UN MANAGER\n");
-    printf("PROCEDIENDO A ABORTAR TODOS LOS HIJOS\n");
-    if (lista_hijos.hijo == 0){
-        printf("NO HAY HIJOS\n");
-    }
-    else if (lista_hijos.sig == NULL){
-        printf("ENVIANDO SEÑAL A 1 HIJO\n");
-        kill(lista_hijos.hijo, SIGABRT);
+    printf("   (M): Ha llegado una señal SIGABRT a un Manager\n");
+    printf("   (M): Se enviará SIGABRT a todos sus hijos\n");
+    if (lista_hijos->hijo == 0){
+        printf("   (M): No hay hijos\n");
     }
     else{
-        kill(lista_hijos.hijo, SIGABRT);
         struct lista* p;
-        p = lista_hijos.sig;
-        kill(p->hijo, SIGABRT);
+        int nro_padre = lista_hijos->nro_padre;
+        p = lista_hijos;
+        printf("P%i (M): Enviando señal a hijo %i\n", nro_padre, lista_hijos->hijo);
+        kill(lista_hijos->hijo, SIGABRT);
         while (p->sig!= NULL){
             p = p->sig;
+            printf("P%i (M): Enviando señal a hijo %i\n", nro_padre, p->hijo);
             kill(p->hijo, SIGABRT);
-        }
-    }
+        };
 
-    /* Acá se debiesen juntar todos los archivos en caso de que haya un abort*/
+        // Se guarda el archivo de salida
+        char type = 'M';
+        guardar_archivo(type, nro_padre);
+    };
+
     /* Finalmente le hago abort al proceso manager */
     pid_t actual = getpid();
     kill(actual, SIGKILL);
-
-}
+};
 
 void signal_sigabrt_handler_worker(int sig){
     // Obtenemos el pid correspondiente
@@ -311,31 +318,28 @@ void signal_sigabrt_handler_worker(int sig){
 
 /* Función que inserta valores en la variable global lista_hijos*/
 /* Es una lista enlazada. Está definida en el header de funciones*/
-void insert(pid_t* hijo)
+void insert(pid_t* hijo, int* nro_proceso, int* nro_padre)
 {
-    if (lista_hijos.hijo == 0){
-        lista_hijos.hijo = *hijo;
-        lista_hijos.sig = NULL;
+    struct lista* q;
+    struct lista* p;
+    q = malloc(sizeof(struct lista));
+    q->sig =         NULL;
+    q->hijo =        *hijo;
+    q->nro_proceso = *nro_proceso;
+    q->nro_padre =   *nro_padre;
+    p = lista_hijos;
+    if (p == NULL){
+        lista_hijos = q;
     }
-    else{
-        struct lista* q;
-        struct lista* p;
-        q = malloc(sizeof(struct lista));
-        q->sig = NULL;
-        q->hijo = *hijo;
-        p = lista_hijos.sig;
-        if (p == NULL){
-            lista_hijos.sig = q;
+    else
+    {
+        while(p->sig != NULL)
+        {
+            p = p->sig;
         }
-        else{
-            while(p->sig != NULL){
-                p = p->sig;
-            }
-            p->sig = q;
-        }
-    }
-
-}
+        p->sig = q;
+    };
+};
 
 
 
@@ -382,4 +386,55 @@ struct worker_data* buscar_worker(pid_t* wpid)
         actual = actual->sig;
     };
     return actual;
+};
+
+
+
+
+
+// GUARDADO DE ARCHIVOS
+// Guarda el archivo de salida para procesos Manager y Root
+void guardar_archivo(char type, int nro_padre)
+{
+    // Se define el nombre del archivo de salida
+    char filename[10];
+    sprintf(filename, "%d.txt", nro_padre);
+
+    // Se crea el archivo
+    FILE* file = fopen(filename, "w");
+
+    // Se recorren todos los hijos
+    struct lista* p;
+    p = lista_hijos;
+    while (p != NULL){
+        // Se define el nombre del archivo hijo
+        char child_filename[10];
+        sprintf(child_filename, "%d.txt", p->nro_proceso);
+
+        // Se abre el archivo hijo
+        FILE* child_file = fopen(child_filename, "r");
+
+        // Comprobamos que child_file existe
+        if(!child_file)
+        {
+            printf("P%i (%c): No se ha encontrado el archivo %s\n", nro_padre, type, child_filename);
+            p = p->sig;
+            continue;
+        };
+
+        // Se escribe hijo en padre
+        char line[300];
+        while (fgets(line, 300, child_file) != NULL) 
+        { 
+            fprintf(file, "%s", line);
+        };
+
+        // Cerramos child_file
+        fclose(child_file);
+
+        // Avanzamos al siguiente hijo
+        p = p->sig;
+    };
+    printf("P%i (%c): Archivo %s generado\n", nro_padre, type, filename);
+    fclose(file);
 };

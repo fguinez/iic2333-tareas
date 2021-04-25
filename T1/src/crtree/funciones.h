@@ -25,13 +25,17 @@ struct worker_data {
 
 struct lista {
     pid_t hijo;
+    int nro_proceso;
+    int nro_padre;
     struct lista* sig;
 };
 
 
 struct lista *creanodo();
-void insert(pid_t*);
+void insert(pid_t*, int* nro_proceso, int* nro_padre);
 void insert_worker(pid_t*, char***, time_t*, time_t*, int*, int*, int*);
 struct worker_data* buscar_worker(pid_t*);
+
+void guardar_archivo(char, int);
 
 //void lista_workers_init();

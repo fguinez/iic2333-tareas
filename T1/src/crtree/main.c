@@ -15,20 +15,19 @@
 /* Puedes usar estas variables en cualquier archivo. Las programé para que se actualizaran según corresponda */
 char* proceso_global;
 struct lista* lista_hijos;
-struct worker_data* lista_workers = NULL;
+struct worker_data* lista_workers;
 
 
 int main(int argc, char **argv)
 {
-
-  printf("&&&&&&&&&&&&&&&&&&&&&&\n");
+    printf("&&&&&&&&&&&&&&&&&&&&&&\n");
     if(argc != 3)
     {
-      printf("ARGUMENTOS RECIBIDOS: %d\n", argc);
-      printf("Modo de uso: %s <input> <process>\nDonde:\n", argv[0]);
-      printf("\t\"<input>\" es la ruta al archivo de input\n");
-      printf("\t\"<process>\" es índice del proceso desde donde debe empezar la ejecución\n");
-      return 1;
+        printf("ARGUMENTOS RECIBIDOS: %d\n", argc);
+        printf("Modo de uso: %s <input> <process>\nDonde:\n", argv[0]);
+        printf("\t\"<input>\" es la ruta al archivo de input\n");
+        printf("\t\"<process>\" es índice del proceso desde donde debe empezar la ejecución\n");
+        return 1;
     }
     /* Abre el input file */
     FILE* input_stream = fopen(argv[1], "r");
@@ -36,8 +35,8 @@ int main(int argc, char **argv)
     // Comprueba que el archivo exista
     if(!input_stream)
     {
-      fprintf(stderr, "No se ha encontrado el archivo %s\n", argv[1]);
-      return 2;
+        fprintf(stderr, "No se ha encontrado el archivo %s\n", argv[1]);
+        return 2;
     };
 
     /* Sacamos el índice y el total de procesos */
@@ -90,7 +89,7 @@ int main(int argc, char **argv)
         printf("P%i (M): Terminado\n", indice);
 
         /* Acá el proceso manager debiese manejar los archivos de sus procesos workers y juntarlos todos
-         * en un mismo archivo, tal como lo pide el enunciado.*/
+          * en un mismo archivo, tal como lo pide el enunciado.*/
 
         printf("++++++++++++++++++++++++\n");
         exit(0);
@@ -104,14 +103,36 @@ int main(int argc, char **argv)
         // Debiese hacer fork y que el proceso hijo haga execve al ejecutable y que ese proceso
         crear_hijo_worker(proceso_copia, indice);
         /* * hijo se encargue de eso. Después, el hijo le devuelve el resultado al padre (worker) y este
-         * debiese guardar el resultado en un archivo como se pide en el enunciado*/
+          * debiese guardar el resultado en un archivo como se pide en el enunciado*/
         printf("P%i (W): Terminado\n", indice);
         printf("++++++++++++++++++++++++\n");
         exit(0);
     }
 
-
-
+    // Cerramos el archivo de input
     fclose(input_stream);
-  return 0;
+
+    // Liberamos memoria
+    free(proceso);
+    struct lista* a;
+    struct lista* b;
+    a = lista_hijos;
+    while (a != NULL)
+    {
+        b = a;
+        a = a->sig;
+        free(b);
+    };
+
+    struct worker_data* c;
+    struct worker_data* d;
+    c = lista_workers;
+    while (c != NULL)
+    {
+        d = c;
+        c = c->sig;
+        free(d);
+    };
+
+    return 0;
 }

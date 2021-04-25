@@ -136,9 +136,13 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
         { 
             fprintf(file, "%s", line);
         };
+        free(child_filename);
         fclose(child_file);
     };
     printf("P%i    : Archivo %s generado\n", nro_proceso, filename);
+
+    // Liberamos memoria
+    free(hijos);
     fclose(file);
 };
 
@@ -210,6 +214,7 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
             printf("P%i (W): Archivo %s generado\n", nro_proceso, filename);
         };
     };
+    free(args);
 };
 
 

@@ -20,7 +20,6 @@ struct worker_data {
     int status;
     int nro_proceso;
     int n;
-    struct worker_data* sig;
 };
 
 struct lista {
@@ -34,10 +33,9 @@ struct lista {
 struct lista *creanodo();
 void insert(pid_t*, int* nro_proceso, int* nro_padre);
 void insert_worker(pid_t*, char***, time_t*, time_t*, int*, int*, int*);
-struct worker_data* buscar_worker(pid_t*);
 
 void guardar_archivo(char, int);
 
 void* check_timeout(void*);
 
-//void lista_workers_init();
+void strip(char*);

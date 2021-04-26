@@ -17,7 +17,7 @@
 /* Puedes usar estas variables en cualquier archivo. Las programé para que se actualizaran según corresponda */
 char* proceso_global;
 struct lista* lista_hijos;
-struct worker_data* lista_workers;
+struct worker_data worker_data;
 
 
 
@@ -50,6 +50,7 @@ int main(int argc, char **argv)
 
     /* Como ya abrimos el archivo y ya tenemos el índice, buscamos el proceso asociado al índice */
     char* proceso = buscar_linea(argv[1], indice);
+    strip(proceso);
     printf("P%i    : Ejecutando: %s\n", indice, proceso);
     char* proceso_copia;
     proceso_copia = strdup(proceso);
@@ -102,7 +103,7 @@ int main(int argc, char **argv)
     else{
         printf("P%i (W): Iniciando proceso %i...\n", indice, getpid());
         signal(SIGINT, &signal_sigint_handler_nonroot);
-        signal(SIGABRT, &signal_sigabrt_handler_worker);
+        //signal(SIGABRT, &signal_sigabrt_handler_worker);
         
         // Debiese hacer fork y que el proceso hijo haga execve al ejecutable y que ese proceso
         crear_hijo_worker(proceso_copia, indice);
@@ -126,16 +127,6 @@ int main(int argc, char **argv)
         b = a;
         a = a->sig;
         free(b);
-    };
-
-    struct worker_data* c;
-    struct worker_data* d;
-    c = lista_workers;
-    while (c != NULL)
-    {
-        d = c;
-        c = c->sig;
-        free(d);
     };
 
     return 0;

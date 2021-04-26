@@ -14,6 +14,7 @@ void signal_sigabrt_handler(int);
 
 struct worker_data {
     pid_t pid;
+    pid_t childpid;
     char** args;
     time_t init_time;
     time_t total_time;
@@ -33,7 +34,9 @@ struct lista {
 struct lista *creanodo();
 void insert(pid_t*, int* nro_proceso, int* nro_padre);
 
-void guardar_archivo(char, int);
+void guardar_archivo_manager(char, int);
+
+void guardar_archivo_worker(int);
 
 void* check_timeout(void*);
 

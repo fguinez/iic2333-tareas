@@ -151,21 +151,19 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
             {
                 int result = kill(actual->hijo, SIGABRT);
                 if (result == 0)
-                    printf("P%i (%c): P%i abortado\n", nro_proceso, type, actual->nro_proceso);
+                    printf("P%i (%c): Abortando P%i...\n", nro_proceso, type, actual->nro_proceso);
                 actual = actual->sig;
             };
-            break;
-        } else {
             usleep(500000);
+            break;
         };
         
     } while (continue_wait);
 
     // Guardamos el archivo de salida
-    guardar_archivo(type, nro_proceso);
+    guardar_archivo_manager(type, nro_proceso);
 
     // Liberamos memoria
-    printf("free hijos\n");//+
     free(hijos);
 };
 
@@ -214,7 +212,6 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
     //printf("||||||| %i, %s, %li, %li, %i, %i, %i\n", worker_pid, args[0], init_time, total_time, status, nro_proceso, n);/////////////////////////////////////////////////////////////////
     worker_data.pid         = getpid();
     worker_data.args        = args;
-    worker_data.init_time   = time(NULL);
     worker_data.total_time  = -1;
     worker_data.status      = -1;
     worker_data.nro_proceso = nro_proceso;
@@ -227,6 +224,7 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
 
     /* Creamos un hijo de worker para realizar exec */
     pid_t childpid;
+    worker_data.init_time   = time(NULL);
     childpid = fork();
 
     if (childpid >= 0)  /* El fork se realizó con éxito */
@@ -234,8 +232,8 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
         if (childpid == 0)  /* Proceso hijo */
         {
             //printf("P%i (W): Voy a ejecutar %s\n", nro_proceso, executable);
-            //execvp(executable, args);
-            int err = execve(executable, args, NULL);
+            int err = execvp(executable, args);
+            //int err = execve(executable, args, NULL);
             if (err == -1) {
                 int errve = errno;
                 printf("%s\n", strerror(errve));
@@ -243,39 +241,26 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
             };
             
         } else {    /* Proceso padre worker */
+            worker_data.childpid = childpid;
             //while (waitpid(childpid, &worker_data.status, WNOHANG) == 0){
             //    printf("%i\n", worker_data.status);
-            //    sleep(0.5);
             //};
             int wait_result;
             do {
                 wait_result = waitpid(childpid, &worker_data.status, WNOHANG);
 
+                sleep(1);
                 worker_data.total_time = time(NULL) - worker_data.init_time;
+
             } while (wait_result == 0);
             //wait(&worker_data.status); /* wait for child to exit, and store its status */
             
-            printf("P%i (W): Child's exit code is: %d\n",nro_proceso, WEXITSTATUS(worker_data.status));
-            printf("P%i (W): Child pid: %i\n", nro_proceso, childpid);
+            printf("P%i (W): Child %i exit code is: %d\n",nro_proceso, childpid, WEXITSTATUS(worker_data.status));
 
-            // Definimos el nombre del archivo de salida
-            char filename[10];
-            sprintf(filename, "%d.txt", nro_proceso);
-
-            // Abrimos el archivo
-            FILE* file = fopen(filename, "w");
-            // Escribimos el output en el archivo
-            for (int i=0; i<n+1; i++)
-            {
-                fprintf(file, "%s,", args[i]);
-            };
-            fprintf(file, "%li,%i,0\n", worker_data.total_time, WEXITSTATUS(worker_data.status));
-            // Cerramos el archivo
-            fclose(file);
-            printf("P%i (W): Archivo %s generado\n", nro_proceso, filename);
+            // Guardamos el archivo de salida
+            guardar_archivo_worker(0);
         };
     };
-    printf("last childpid: %i\n", childpid);
     for (int i=0; i<n+1; i++)
     {
         free(args[i]);
@@ -309,7 +294,7 @@ void signal_sigint_handler_root(int sig){
         };
         // Se guarda el archivo de salida
         char type = 'R';
-        guardar_archivo(type, nro_padre);
+        guardar_archivo_manager(type, nro_padre);
     };
     /* Finalmente le hago abort al proceso root */
     pid_t actual = getpid();
@@ -342,7 +327,7 @@ void signal_sigabrt_handler(int sig){
 
         // Se guarda el archivo de salida
         char type = 'M';
-        guardar_archivo(type, nro_padre);
+        guardar_archivo_manager(type, nro_padre);
     };
 
     /* Finalmente le hago abort al proceso manager */
@@ -367,36 +352,20 @@ void signal_sigabrt_handler(int sig){
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////
 void signal_sigabrt_handler_worker(int sig){
-    printf("   (W): Ha llegado un SIGABRT a un WORKER\n");
+    printf("P%i (W): Ha llegado un SIGABRT a un WORKER\n", worker_data.nro_proceso);
     // Obtenemos el pid correspondiente
     pid_t wpid = getpid();
 
-    // Avisamos del ABRT
-    printf("P%i (W): Abortando worker %i...\n", worker_data.nro_proceso, wpid);
+    // Enviamos SIGABRT al hijo de worker
+    printf("P%i (W): Abortando proceso %i...\n", worker_data.nro_proceso, worker_data.childpid);
+    kill(worker_data.childpid, SIGABRT);
 
-    // Definimos el nombre del archivo de salida
-    char filename[10];
-    sprintf(filename, "%d.txt", worker_data.nro_proceso);
+    // Esperamos la respuesta del hijo de worker
+    waitpid(worker_data.childpid, &worker_data.status, WUNTRACED);
 
-    // Abrimos el archivo
-    FILE* file = fopen(filename, "w");
-
-    // Escribimos el output en el archivo
-    for (int i=0; i<worker_data.n+1; i++)
-    {
-        fprintf(file, "%s,", worker_data.args[i]);
-    };
-    if (worker_data.total_time != -1)
-    {
-        fprintf(file, "%li,%i,1\n", worker_data.total_time, WEXITSTATUS(worker_data.status));
-    } else
-    {
-        fprintf(file, "%li,%i,1\n", time(NULL) - worker_data.init_time, WEXITSTATUS(worker_data.status));
-    }
-        
-    // Cerramos el archivo
-    fclose(file);
-    printf("P%i (W): Archivo %s generado\n", worker_data.nro_proceso, filename);
+    // Guardamos el archivo de salida
+    guardar_archivo_worker(1);
+    
     kill(wpid, SIGKILL);
 };
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -440,7 +409,7 @@ void insert(pid_t* hijo, int* nro_proceso, int* nro_padre)
 
 // GUARDADO DE ARCHIVOS
 // Guarda el archivo de salida para procesos Manager y Root
-void guardar_archivo(char type, int nro_padre)
+void guardar_archivo_manager(char type, int nro_padre)
 {
     // Se define el nombre del archivo de salida
     char filename[10];
@@ -485,6 +454,27 @@ void guardar_archivo(char type, int nro_padre)
     fclose(file);
 };
 
+// Guarda el archivo de salida para procesos Worker
+void guardar_archivo_worker(int interrupted)
+{
+    // Definimos el nombre del archivo de salida
+    char filename[10];
+    sprintf(filename, "%d.txt", worker_data.nro_proceso);
+
+    // Abrimos el archivo
+    FILE* file = fopen(filename, "w");
+
+    // Escribimos el output en el archivo
+    for (int i=0; i<worker_data.n+1; i++)
+    {
+        fprintf(file, "%s,", worker_data.args[i]);
+    };
+    fprintf(file, "%li,%i,%i\n", worker_data.total_time, WEXITSTATUS(worker_data.status), interrupted);
+
+    // Cerramos el archivo
+    fclose(file);
+    printf("P%i (W): Archivo %s generado\n", worker_data.nro_proceso, filename);
+};
 
 
 
@@ -510,7 +500,6 @@ void* check_timeout(void* timeout)
             printf("P%i    : P%i abortado\n", lista_hijos->nro_padre, lista_hijos->nro_proceso);
         actual = actual->sig;
     };
-    printf("free timeout\n");//+
     free(timeout);
     void* a = NULL;
     return a;

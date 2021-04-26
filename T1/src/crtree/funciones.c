@@ -214,7 +214,6 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
             int wait_result;
             do {
                 wait_result = waitpid(childpid, &worker_data.status, WNOHANG);
-
                 sleep(1);
                 worker_data.total_time = time(NULL) - worker_data.init_time;
 
@@ -257,6 +256,8 @@ void signal_sigint_handler_root(int sig){
             printf("P%i (R): Enviando señal a hijo %i\n", nro_padre, p->hijo);
             kill(p->hijo, SIGABRT);
         };
+        usleep(500000);
+
         // Se guarda el archivo de salida
         char type = 'R';
         guardar_archivo_manager(type, nro_padre);
@@ -289,6 +290,7 @@ void signal_sigabrt_handler(int sig){
             printf("P%i (M): Enviando señal a hijo %i\n", nro_padre, p->hijo);
             kill(p->hijo, SIGABRT);
         };
+        usleep(500000);
 
         // Se guarda el archivo de salida
         char type = 'M';
@@ -301,21 +303,6 @@ void signal_sigabrt_handler(int sig){
 };
 
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
-///////  ALERTA BUG DETECTADO  ////  INICIO ZONA EN CUARENTENA  ////  ALERTA BUG DETECTADO  //////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//   Este bug consiste en que, en determinados casos, cuando un worker recibe SIGABRT, este
-//   recibirá la señal sin pasar por el handler, muriendo sin escribir su archivo.
-// 
-//   A mi entender, este handler se está llamando como cualquier otro, por lo que no entiendo
-//   porqué no es utilizado cuando los otros handlers funcionan bien.
-// 
-//   Probé:
-//        - Agregando signal(SIGABRT, &signal_sigabrt_handler_worker) en varias partes;
-//        - Modificando wait con WNOHANG
-//
-//////////////////////////////////////////////////////////////////////////////////////////////////
 void signal_sigabrt_handler_worker(int sig){
     printf("P%i (W): Ha llegado un SIGABRT a un WORKER\n", worker_data.nro_proceso);
     // Obtenemos el pid correspondiente
@@ -333,9 +320,6 @@ void signal_sigabrt_handler_worker(int sig){
     
     kill(wpid, SIGKILL);
 };
-//////////////////////////////////////////////////////////////////////////////////////////////////
-///////  ALERTA BUG DETECTADO  ////  FINAL ZONA EN CUARENTENA  ////  ALERTA BUG DETECTADO  ///////
-//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 /* Función que inserta valores en la variable global lista_hijos*/

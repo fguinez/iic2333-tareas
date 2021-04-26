@@ -74,10 +74,9 @@ void strip(char* s)
 // CREADORES DE HIJOS
 /* Crea los hijos de un proceso manager*/
 void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
-    strsep(&proceso, ",");
+    char type = strsep(&proceso, ",")[0];
     int timeout = atoi(strsep(&proceso, ","));
     int n = atoi(strsep(&proceso, ","));
-    int status;
 
     /* Crea un array con los hijos*/
     char** hijos = malloc(n+2 * sizeof(char*));
@@ -91,10 +90,12 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
     };
 
     // Empieza a correr timeout
-    pthread_t tid;
-    int* arg = malloc(sizeof(int));
-    *arg = timeout;
-    pthread_create(&tid, NULL, check_timeout, arg);
+    //pthread_t tid;
+    //int* arg = malloc(sizeof(int));
+    //*arg = timeout;
+    //pthread_create(&tid, NULL, check_timeout, arg);
+
+    time_t init_time = time(NULL);
 
     /* Para cada hijo, hacemos fork y execve*/
     for (int i = 0; i<n; i++){
@@ -123,63 +124,65 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
 
     /* Se setean las señales dependiendo si el proceso de root o nonroot*/
 
-    // Definimos el nombre del archivo de salida
-    char filename[10];
-    sprintf(filename, "%d.txt", nro_proceso);
-    // Se crea el archivo del manager
-    FILE* file = fopen(filename, "w");
-
     /* El proceso padre se queda esperando a que todos los hijos terminen*/
-    for (int i = 0; i<n; i++){
-        wait(&status);
+    struct lista* actual;
+    int continue_wait = 0;
+    pid_t cpid;
+    //for (int i = 0; i<n; i++){
+        //wait(&status);
         //waitpid(childpid[i], NULL, WNOHANG);
-
-        /* Se escribe el archivo del hijo en el archivo del padre */
-        // Se define el nombre del archivo del hijo
-        char* child_filename;
-        child_filename = malloc(sizeof(char) * (strlen(hijos[i]) + 6));
-        sprintf(child_filename, "%s.txt", hijos[i]);
-        // Se abre en el archivo hijo
-        FILE* child_file = fopen(child_filename, "r");
-        // Comprueba que el archivo exista
-        if(!child_file)
+    do {
+        actual = lista_hijos;
+        continue_wait = 0;
+        while (actual != NULL)
         {
-            printf("P%i    : No se ha encontrado el archivo %s\n", nro_proceso, child_filename);
-            continue;
+            cpid = waitpid(actual->hijo, NULL, WNOHANG);
+            if (cpid == 0)
+            {
+                continue_wait = 1;
+            };
+            actual = actual->sig;
         };
-        // Se escribe hijo en padre
-        char line[300];
-        while (fgets(line, 200, child_file) != NULL) 
-        { 
-            fprintf(file, "%s", line);
+        if (time(NULL) - init_time > timeout)
+        {
+            printf("P%i (%c): Se acabó el tiempo para mis hijos (%i segundos)\n", nro_proceso, type, timeout);
+            actual = lista_hijos;
+            while (actual != NULL)
+            {
+                int result = kill(actual->hijo, SIGABRT);
+                if (result == 0)
+                    printf("P%i (%c): P%i abortado\n", nro_proceso, type, actual->nro_proceso);
+                actual = actual->sig;
+            };
+            break;
+        } else {
+            usleep(500000);
         };
-        free(child_filename);
-        fclose(child_file);
-    };
-    // Cerramos el checkeo de timeout
-    pthread_cancel(tid);
+        
+    } while (continue_wait);
 
-
-    printf("P%i    : Archivo %s generado\n", nro_proceso, filename);
+    // Guardamos el archivo de salida
+    guardar_archivo(type, nro_proceso);
 
     // Liberamos memoria
+    printf("free hijos\n");//+
     free(hijos);
-    fclose(file);
 };
 
 
 void crear_hijo_worker(char* instructions, int nro_proceso){
-    /* Separamos las instrucciones */
     // No guardamos primer elemento, siempre será W
     strsep(&instructions, ",");
+
     // Guardamos el comando a ejecutar
     char* executable = strsep(&instructions, ",");
+
     // Guardamos la cantidad de argumentos del comando
     int n = atoi(strsep(&instructions, ","));
     
     // Guardamos un array con el ejecutable y los n argumentos
     char** args;
-    args = malloc(n+2 * sizeof(char*));
+    args = malloc(n+3 * sizeof(char*));
     int len = strlen(executable);
     args[0] = malloc((len+1) * sizeof(char));
     strcpy(args[0], executable);
@@ -189,12 +192,12 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
         len = strlen(arg);
         args[i] = malloc((len+1) * sizeof(char));
         strcpy(args[i], arg);
-        
         if (i == n)
         {
             strip(args[i]);              // Quita \n del último argumento
         }
     }
+    args[n+1] = NULL;
     
     /* Guardamos el worker en struct worker */
     //time_t init_time = -1;
@@ -231,13 +234,27 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
         if (childpid == 0)  /* Proceso hijo */
         {
             //printf("P%i (W): Voy a ejecutar %s\n", nro_proceso, executable);
-            execvp(executable, args);
-        } else {    /* Proceso padre worker */
-            while (waitpid(childpid, &worker_data.status, WNOHANG) == 0){
-                sleep(0.5);
+            //execvp(executable, args);
+            int err = execve(executable, args, NULL);
+            if (err == -1) {
+                int errve = errno;
+                printf("%s\n", strerror(errve));
+                exit(errve);
             };
+            
+        } else {    /* Proceso padre worker */
+            //while (waitpid(childpid, &worker_data.status, WNOHANG) == 0){
+            //    printf("%i\n", worker_data.status);
+            //    sleep(0.5);
+            //};
+            int wait_result;
+            do {
+                wait_result = waitpid(childpid, &worker_data.status, WNOHANG);
+
+                worker_data.total_time = time(NULL) - worker_data.init_time;
+            } while (wait_result == 0);
             //wait(&worker_data.status); /* wait for child to exit, and store its status */
-            worker_data.total_time = time(NULL) - worker_data.init_time;
+            
             printf("P%i (W): Child's exit code is: %d\n",nro_proceso, WEXITSTATUS(worker_data.status));
             printf("P%i (W): Child pid: %i\n", nro_proceso, childpid);
 
@@ -258,6 +275,7 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
             printf("P%i (W): Archivo %s generado\n", nro_proceso, filename);
         };
     };
+    printf("last childpid: %i\n", childpid);
     for (int i=0; i<n+1; i++)
     {
         free(args[i]);
@@ -492,6 +510,7 @@ void* check_timeout(void* timeout)
             printf("P%i    : P%i abortado\n", lista_hijos->nro_padre, lista_hijos->nro_proceso);
         actual = actual->sig;
     };
+    printf("free timeout\n");//+
     free(timeout);
     void* a = NULL;
     return a;

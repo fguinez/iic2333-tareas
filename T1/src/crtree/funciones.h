@@ -38,6 +38,4 @@ void guardar_archivo_manager(char, int);
 
 void guardar_archivo_worker(int);
 
-void* check_timeout(void*);
-
 void strip(char*);

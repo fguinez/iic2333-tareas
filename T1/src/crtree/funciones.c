@@ -8,11 +8,8 @@
 #include <sys/types.h>
 #include <string.h>
 #include <time.h>
-
-#include <pthread.h>
 #include <errno.h>
 
-#define NUM_THREADS     1
 
 extern char* proceso_global;
 extern struct lista* lista_hijos;
@@ -88,12 +85,6 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
             strip(hijos[i]);              // Quita \n del último hijo
         };
     };
-
-    // Empieza a correr timeout
-    //pthread_t tid;
-    //int* arg = malloc(sizeof(int));
-    //*arg = timeout;
-    //pthread_create(&tid, NULL, check_timeout, arg);
 
     time_t init_time = time(NULL);
 
@@ -476,31 +467,3 @@ void guardar_archivo_worker(int interrupted)
     printf("P%i (W): Archivo %s generado\n", worker_data.nro_proceso, filename);
 };
 
-
-
-
-
-// TIMEOUT
-/* Corta un proceso si ya cumplió su timeout */
-void* check_timeout(void* timeout)
-{
-    time_t max_time = *((int*) timeout);
-
-    time_t init_time = time(NULL);
-
-    while (time(NULL) - init_time < max_time);
-
-    printf("P%i    : Se acabó el tiempo para mis hijos (%li segundos)\n", lista_hijos->nro_padre, max_time);
-    struct lista* actual;
-    actual = lista_hijos;
-    while (actual != NULL)
-    {
-        int result = kill(actual->hijo, SIGABRT);
-        if (result == 0)
-            printf("P%i    : P%i abortado\n", lista_hijos->nro_padre, lista_hijos->nro_proceso);
-        actual = actual->sig;
-    };
-    free(timeout);
-    void* a = NULL;
-    return a;
-};

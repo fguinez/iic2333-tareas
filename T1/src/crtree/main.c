@@ -7,7 +7,6 @@
 #include "funciones.h"
 #include <string.h>
 #include <signal.h>
-#include <pthread.h>
 
 
 /* Hay dos variables globales */

@@ -533,7 +533,9 @@ void* check_timeout(void* timeout)
     actual = lista_hijos;
     while (actual != NULL)
     {
-        kill(actual->hijo, SIGABRT);
+        int result = kill(actual->hijo, SIGABRT);
+        if (result == 0)
+            printf("P%i    : P%i abortado\n", lista_hijos->nro_padre, lista_hijos->nro_proceso);
         actual = actual->sig;
     };
     free(timeout);

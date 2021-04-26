@@ -113,15 +113,10 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
         }
     }
 
-    /* Se setean las señales dependiendo si el proceso de root o nonroot*/
-
     /* El proceso padre se queda esperando a que todos los hijos terminen*/
     struct lista* actual;
     int continue_wait = 0;
     pid_t cpid;
-    //for (int i = 0; i<n; i++){
-        //wait(&status);
-        //waitpid(childpid[i], NULL, WNOHANG);
     do {
         actual = lista_hijos;
         continue_wait = 0;
@@ -188,31 +183,14 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
     }
     args[n+1] = NULL;
     
-    /* Guardamos el worker en struct worker */
-    //time_t init_time = -1;
-    //time_t total_time = -1;
-    //int status = -1;
-    //////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////  ALERTA BUG DETECTADO  ////  INICIO ZONA EN CUARENTENA  ////  ALERTA BUG DETECTADO  //////
-    //////////////////////////////////////////////////////////////////////////////////////////////////
-    //
-    //   Ver la función insert_worker para más detalles
-    //
-    ////////////////////////////////////////////////////////////////////////////////////////////////// 
-    //printf("||||||| entrando del worker insert\n");/////////////////////////////////////////////////////////////////
-    //printf("||||||| %i, %s, %li, %li, %i, %i, %i\n", worker_pid, args[0], init_time, total_time, status, nro_proceso, n);/////////////////////////////////////////////////////////////////
+    // Guardamos datos en struct worker
     worker_data.pid         = getpid();
     worker_data.args        = args;
     worker_data.total_time  = -1;
     worker_data.status      = -1;
     worker_data.nro_proceso = nro_proceso;
     worker_data.n           = n;
-    //printf("||||||| saliendo del worker insert\n");/////////////////////////////////////////////////////////////////
     
-    //////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////  ALERTA BUG DETECTADO  ////  FINAL ZONA EN CUARENTENA  ////  ALERTA BUG DETECTADO  ///////
-    //////////////////////////////////////////////////////////////////////////////////////////////////
-
     /* Creamos un hijo de worker para realizar exec */
     pid_t childpid;
     worker_data.init_time   = time(NULL);
@@ -222,9 +200,7 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
     {
         if (childpid == 0)  /* Proceso hijo */
         {
-            //printf("P%i (W): Voy a ejecutar %s\n", nro_proceso, executable);
             int err = execvp(executable, args);
-            //int err = execve(executable, args, NULL);
             if (err == -1) {
                 int errve = errno;
                 printf("%s\n", strerror(errve));
@@ -233,9 +209,8 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
             
         } else {    /* Proceso padre worker */
             worker_data.childpid = childpid;
-            //while (waitpid(childpid, &worker_data.status, WNOHANG) == 0){
-            //    printf("%i\n", worker_data.status);
-            //};
+            
+            // Esperamos a que el hijo termine
             int wait_result;
             do {
                 wait_result = waitpid(childpid, &worker_data.status, WNOHANG);
@@ -244,7 +219,6 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
                 worker_data.total_time = time(NULL) - worker_data.init_time;
 
             } while (wait_result == 0);
-            //wait(&worker_data.status); /* wait for child to exit, and store its status */
             
             printf("P%i (W): Child %i exit code is: %d\n",nro_proceso, childpid, WEXITSTATUS(worker_data.status));
 
@@ -331,15 +305,15 @@ void signal_sigabrt_handler(int sig){
 ///////  ALERTA BUG DETECTADO  ////  INICIO ZONA EN CUARENTENA  ////  ALERTA BUG DETECTADO  //////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//   Este bug consiste en que, independiente desde dónde se haga SIGABRT a un worker, este
+//   Este bug consiste en que, en determinados casos, cuando un worker recibe SIGABRT, este
 //   recibirá la señal sin pasar por el handler, muriendo sin escribir su archivo.
 // 
 //   A mi entender, este handler se está llamando como cualquier otro, por lo que no entiendo
 //   porqué no es utilizado cuando los otros handlers funcionan bien.
 // 
-//   Probé agregando:
-//           signal(SIGABRT, &signal_sigabrt_handler_worker);
-//   en varias partes del código, pero no resultó.
+//   Probé:
+//        - Agregando signal(SIGABRT, &signal_sigabrt_handler_worker) en varias partes;
+//        - Modificando wait con WNOHANG
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////
 void signal_sigabrt_handler_worker(int sig){
@@ -388,11 +362,6 @@ void insert(pid_t* hijo, int* nro_proceso, int* nro_padre)
         p->sig = q;
     };
 };
-
-
-
-
-
 
 
 

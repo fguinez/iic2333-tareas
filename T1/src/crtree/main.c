@@ -16,9 +16,9 @@
 /* Puedes usar estas variables en cualquier archivo. Las programé para que se actualizaran según corresponda */
 char* proceso_global;
 struct lista* lista_hijos;
-struct worker_data worker_data;
+struct worker_data worker;
 
-
+// Para mostrar impresiones, descomentar todas las líneas con '///' en funciones.c y main.c
 
 
 int main(int argc, char **argv)
@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     // Comprueba que el archivo exista
     if(!input_stream)
     {
-        fprintf(stderr, "No se ha encontrado el archivo %s\n", argv[1]);
+        printf("No se ha encontrado el archivo %s\n", argv[1]);
         return 2;
     };
 
@@ -50,6 +50,7 @@ int main(int argc, char **argv)
     /* Como ya abrimos el archivo y ya tenemos el índice, buscamos el proceso asociado al índice */
     char* proceso = buscar_linea(argv[1], indice);
     strip(proceso);
+    char* proceso_pointer = proceso;
     printf("P%i    : Ejecutando: %s\n", indice, proceso);
     char* proceso_copia;
     proceso_copia = strdup(proceso);
@@ -117,7 +118,7 @@ int main(int argc, char **argv)
     fclose(input_stream);
 
     // Liberamos memoria
-    free(proceso);
+    free(proceso_pointer);
     struct lista* a;
     struct lista* b;
     a = lista_hijos;

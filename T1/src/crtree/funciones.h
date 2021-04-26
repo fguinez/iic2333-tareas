@@ -32,7 +32,6 @@ struct lista {
 
 struct lista *creanodo();
 void insert(pid_t*, int* nro_proceso, int* nro_padre);
-void insert_worker(pid_t*, char***, time_t*, time_t*, int*, int*, int*);
 
 void guardar_archivo(char, int);
 

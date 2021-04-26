@@ -103,7 +103,7 @@ int main(int argc, char **argv)
     else{
         printf("P%i (W): Iniciando proceso %i...\n", indice, getpid());
         signal(SIGINT, &signal_sigint_handler_nonroot);
-        //signal(SIGABRT, &signal_sigabrt_handler_worker);
+        signal(SIGABRT, &signal_sigabrt_handler_worker);
         
         // Debiese hacer fork y que el proceso hijo haga execve al ejecutable y que ese proceso
         crear_hijo_worker(proceso_copia, indice);

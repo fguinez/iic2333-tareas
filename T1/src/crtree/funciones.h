@@ -23,18 +23,27 @@ struct worker_data {
     int n;
 };
 
+struct manager_data {
+    time_t init_time;
+    time_t timeout;
+    int nro_proceso;
+};
+
 struct lista {
     pid_t hijo;
     int nro_proceso;
-    int nro_padre;
     struct lista* sig;
 };
 
 
 struct lista *creanodo();
-void insert(pid_t*, int* nro_proceso, int* nro_padre);
+void insert(pid_t*, int* nro_proceso);
 
-void guardar_archivo_manager(char, int);
+void esperar_hijos_manager();
+
+void esperar_hijo_worker();
+
+void guardar_archivo_manager(char);
 
 void guardar_archivo_worker(int);
 

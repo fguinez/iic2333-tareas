@@ -19,19 +19,17 @@ OBJ=obj
 # OPTIMIZACIÓN POR COMPILADOR (descomenta el que necesites, comenta el otro)  #
 ###############################################################################
 
-OPT=-g # Guardar toda la información para poder debugear. No optimiza
-# OPT=-O3 # Optimiza al máximo, descarta toda la información de debug.
+#OPT=-g # Guardar toda la información para poder debugear. No optimiza
+OPT=-O3 # Optimiza al máximo, descarta toda la información de debug.
 
 ###############################################################################
 # PARÁMETROS                                                                  #
 ###############################################################################
 
-LDFLAGS=-pthread -lpthread
-
 # -Wunused = (Warn Unused) Da aviso de las variables que no se estan usando
 # -Wall    = (Warn All) Da aviso de todos los posibles errores de compilación
 # $(OPT)   = Nivel de optimización
-CFLAGS=$(LDFLAGS) -Wunused -Wall $(OPT)
+CFLAGS=-Wunused -Wall $(OPT)
 
 ###############################################################################
 # LIBRERÍAS                                                                   #

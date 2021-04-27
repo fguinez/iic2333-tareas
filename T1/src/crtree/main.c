@@ -18,18 +18,18 @@ char* proceso_global;
 struct lista* lista_hijos;
 struct worker_data worker;
 
-// Para mostrar impresiones, descomentar todas las líneas con '///' en funciones.c y main.c
+// Para mostrar procesos en consola, descomentar todas las líneas con '///' en funciones.c y main.c
 
 
 int main(int argc, char **argv)
 {
-    printf("&&&&&&&&&&&&&&&&&&&&&&\n");
+    ///printf("&&&&&&&&&&&&&&&&&&&&&&\n");
     if(argc != 3)
     {
-        printf("ARGUMENTOS RECIBIDOS: %d\n", argc);
-        printf("Modo de uso: %s <input> <process>\nDonde:\n", argv[0]);
-        printf("\t\"<input>\" es la ruta al archivo de input\n");
-        printf("\t\"<process>\" es índice del proceso desde donde debe empezar la ejecución\n");
+        ///printf("ARGUMENTOS RECIBIDOS: %d\n", argc);
+        ///printf("Modo de uso: %s <input> <process>\nDonde:\n", argv[0]);
+        ///printf("\t\"<input>\" es la ruta al archivo de input\n");
+        ///printf("\t\"<process>\" es índice del proceso desde donde debe empezar la ejecución\n");
         return 1;
     }
     /* Abre el input file */
@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     // Comprueba que el archivo exista
     if(!input_stream)
     {
-        printf("No se ha encontrado el archivo %s\n", argv[1]);
+        ///printf("No se ha encontrado el archivo %s\n", argv[1]);
         return 2;
     };
 
@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     char* proceso = buscar_linea(argv[1], indice);
     strip(proceso);
     char* proceso_pointer = proceso;
-    printf("P%i    : Ejecutando: %s\n", indice, proceso);
+    ///printf("P%i    : Ejecutando: %s\n", indice, proceso);
     char* proceso_copia;
     proceso_copia = strdup(proceso);
     actualizar(proceso_copia);
@@ -61,47 +61,47 @@ int main(int argc, char **argv)
 
 
     if (!strcmp(ident, "R")){
-        printf("P%i (R): Iniciando proceso %i...\n", indice, getpid());
+        ///printf("P%i (R): Iniciando proceso %i...\n", indice, getpid());
 
         /* Esto extrae los valores de los otros parḿetros del proceso*/
-        char* timeout = strsep(&proceso, ",");
-        char* hijos = strsep(&proceso, ",");
-        printf("P%i (R): timeout: %s\n", indice, timeout);
-        printf("P%i (R): Total de hijos: %s\n", indice, hijos);
+        ///char* timeout = strsep(&proceso, ",");
+        ///char* hijos = strsep(&proceso, ",");
+        ///printf("P%i (R): timeout: %s\n", indice, timeout);
+        ///printf("P%i (R): Total de hijos: %s\n", indice, hijos);
 
         /* Acá falta el TIMEOUT que vaya en paralelo con la función crear hijos*/
         signal(SIGINT, &signal_sigint_handler_root);
         signal(SIGABRT, &signal_sigint_handler_root);
 
         crear_hijos_manager(proceso_copia, argv[1], indice);
-        printf("P%i (R): Terminado\n", indice);
-        printf("++++++++++++++++++++++++\n");
+        ///printf("P%i (R): Terminado\n", indice);
+        ///printf("++++++++++++++++++++++++\n");
     }
 
     else if (!strcmp(ident, "M")){
-        printf("P%i (M): Iniciando proceso %i...\n", indice, getpid());
+        ///printf("P%i (M): Iniciando proceso %i...\n", indice, getpid());
         /* Esto extrae los valores de los otros parḿetros del proceso*/
-        char* timeout = strsep(&proceso, ",");
-        char* hijos = strsep(&proceso, ",");
-        printf("P%i (M): timeout: %s\n", indice, timeout);
-        printf("P%i (M): Total de hijos: %s\n", indice, hijos);
+        ///char* timeout = strsep(&proceso, ",");
+        ///char* hijos = strsep(&proceso, ",");
+        ///printf("P%i (M): timeout: %s\n", indice, timeout);
+        ///printf("P%i (M): Total de hijos: %s\n", indice, hijos);
 
         /* Acá falta el TIMEOUT que vaya en paralelo con la función crear hijos*/
         signal(SIGINT, &signal_sigint_handler_nonroot);
         signal(SIGABRT, &signal_sigabrt_handler);
 
         crear_hijos_manager(proceso_copia, argv[1], indice);
-        printf("P%i (M): Terminado\n", indice);
+        ///printf("P%i (M): Terminado\n", indice);
 
         /* Acá el proceso manager debiese manejar los archivos de sus procesos workers y juntarlos todos
           * en un mismo archivo, tal como lo pide el enunciado.*/
 
-        printf("++++++++++++++++++++++++\n");
+        ///printf("++++++++++++++++++++++++\n");
         exit(0);
     }
 
     else{
-        printf("P%i (W): Iniciando proceso %i...\n", indice, getpid());
+        ///printf("P%i (W): Iniciando proceso %i...\n", indice, getpid());
         signal(SIGINT, &signal_sigint_handler_nonroot);
         signal(SIGABRT, &signal_sigabrt_handler_worker);
         
@@ -109,8 +109,8 @@ int main(int argc, char **argv)
         crear_hijo_worker(proceso_copia, indice);
         /* * hijo se encargue de eso. Después, el hijo le devuelve el resultado al padre (worker) y este
           * debiese guardar el resultado en un archivo como se pide en el enunciado*/
-        printf("P%i (W): Terminado\n", indice);
-        printf("++++++++++++++++++++++++\n");
+        ///printf("P%i (W): Terminado\n", indice);
+        ///printf("++++++++++++++++++++++++\n");
         exit(0);
     }
 

@@ -16,7 +16,7 @@ extern struct lista* lista_hijos;
 extern struct worker_data worker;
 
 
-
+// Para mostrar procesos en consola, descomentar todas las líneas con '///' en funciones.c y main.c
 
 
 
@@ -131,13 +131,13 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
         };
         if (time(NULL) - init_time > timeout)
         {
-            printf("P%i (%c): Se acabó el tiempo para mis hijos (%i segundos)\n", nro_proceso, type, timeout);
+            ///printf("P%i (%c): Se acabó el tiempo para mis hijos (%i segundos)\n", nro_proceso, type, timeout);
             actual = lista_hijos;
             while (actual != NULL)
             {
                 int result = kill(actual->hijo, SIGABRT);
-                if (result == 0)
-                    printf("P%i (%c): Abortando P%i...\n", nro_proceso, type, actual->nro_proceso);
+                ///if (result == 0)
+                    ///printf("P%i (%c): Abortando P%i...\n", nro_proceso, type, actual->nro_proceso);
                 actual = actual->sig;
             };
             usleep(500000);
@@ -218,7 +218,7 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
 
             } while (wait_result == 0);
             
-            printf("P%i (W): Child %i exit code is: %d\n",nro_proceso, childpid, WEXITSTATUS(worker.status));
+            ///printf("P%i (W): Child %i exit code is: %d\n",nro_proceso, childpid, WEXITSTATUS(worker.status));
 
             // Guardamos el archivo de salida
             guardar_archivo_worker(0);
@@ -239,20 +239,20 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
 // SEÑALES
 /* Función que maneja las señales de SIGINT para procesos root*/
 void signal_sigint_handler_root(int sig){
-    printf("   (R): Ha llegado un SIGINT a ROOT\n");
-    printf("   (R): Se enviará SIGABRT a todos sus hijos\n");
+    ///printf("   (R): Ha llegado un SIGINT a ROOT\n");
+    ///printf("   (R): Se enviará SIGABRT a todos sus hijos\n");
     if (lista_hijos->hijo == 0){
-        printf("   (R): No hay hijos\n");
+        ///printf("   (R): No hay hijos\n");
     }
     else{
         struct lista* p;
         int nro_padre = lista_hijos->nro_padre;
         p = lista_hijos;
-        printf("P%i (R): Enviando señal a hijo %i\n", nro_padre, lista_hijos->hijo);
+        ///printf("P%i (R): Enviando señal a hijo %i\n", nro_padre, lista_hijos->hijo);
         kill(lista_hijos->hijo, SIGABRT);
         while (p->sig!= NULL){
             p = p->sig;
-            printf("P%i (R): Enviando señal a hijo %i\n", nro_padre, p->hijo);
+            ///printf("P%i (R): Enviando señal a hijo %i\n", nro_padre, p->hijo);
             kill(p->hijo, SIGABRT);
         };
         usleep(500000);
@@ -268,25 +268,25 @@ void signal_sigint_handler_root(int sig){
 
 /* Función que maneja las señales de SIGINT para procesos no root*/
 void signal_sigint_handler_nonroot(int sig){
-    printf("      : Ha llegado una señal SIGINT a un M/W\n");
-    printf("      : La señal se omite\n");
+    ///printf("      : Ha llegado una señal SIGINT a un M/W\n");
+    ///printf("      : La señal se omite\n");
 }
 
 void signal_sigabrt_handler(int sig){
-    printf("   (M): Ha llegado una señal SIGABRT a un Manager\n");
-    printf("   (M): Se enviará SIGABRT a todos sus hijos\n");
+    ///printf("   (M): Ha llegado una señal SIGABRT a un Manager\n");
+    ///printf("   (M): Se enviará SIGABRT a todos sus hijos\n");
     if (lista_hijos->hijo == 0){
-        printf("   (M): No hay hijos\n");
+        ///printf("   (M): No hay hijos\n");
     }
     else{
         struct lista* p;
         int nro_padre = lista_hijos->nro_padre;
         p = lista_hijos;
-        printf("P%i (M): Enviando señal a hijo %i\n", nro_padre, lista_hijos->hijo);
+        ///printf("P%i (M): Enviando señal a hijo %i\n", nro_padre, lista_hijos->hijo);
         kill(lista_hijos->hijo, SIGABRT);
         while (p->sig!= NULL){
             p = p->sig;
-            printf("P%i (M): Enviando señal a hijo %i\n", nro_padre, p->hijo);
+            ///printf("P%i (M): Enviando señal a hijo %i\n", nro_padre, p->hijo);
             kill(p->hijo, SIGABRT);
         };
         usleep(500000);
@@ -303,12 +303,12 @@ void signal_sigabrt_handler(int sig){
 
 
 void signal_sigabrt_handler_worker(int sig){
-    printf("P%i (W): Ha llegado un SIGABRT a un WORKER\n", worker.nro_proceso);
+    ///printf("P%i (W): Ha llegado un SIGABRT a un WORKER\n", worker.nro_proceso);
     // Obtenemos el pid correspondiente
     pid_t wpid = getpid();
 
     // Enviamos SIGABRT al hijo de worker
-    printf("P%i (W): Abortando proceso %i...\n", worker.nro_proceso, worker.childpid);
+    ///printf("P%i (W): Abortando proceso %i...\n", worker.nro_proceso, worker.childpid);
     kill(worker.childpid, SIGABRT);
 
     // Esperamos la respuesta del hijo de worker
@@ -375,7 +375,7 @@ void guardar_archivo_manager(char type, int nro_padre)
         // Comprobamos que child_file existe
         if(!child_file)
         {
-            printf("P%i (%c): No se ha encontrado el archivo %s\n", nro_padre, type, child_filename);
+            ///printf("P%i (%c): No se ha encontrado el archivo %s\n", nro_padre, type, child_filename);
             p = p->sig;
             continue;
         };
@@ -393,7 +393,7 @@ void guardar_archivo_manager(char type, int nro_padre)
         // Avanzamos al siguiente hijo
         p = p->sig;
     };
-    printf("P%i (%c): Archivo %s generado\n", nro_padre, type, filename);
+    ///printf("P%i (%c): Archivo %s generado\n", nro_padre, type, filename);
     fclose(file);
 };
 
@@ -416,6 +416,6 @@ void guardar_archivo_worker(int interrupted)
 
     // Cerramos el archivo
     fclose(file);
-    printf("P%i (W): Archivo %s generado\n", worker.nro_proceso, filename);
+    ///printf("P%i (W): Archivo %s generado\n", worker.nro_proceso, filename);
 };
 

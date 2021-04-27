@@ -16,6 +16,7 @@
 /* Puedes usar estas variables en cualquier archivo. Las programé para que se actualizaran según corresponda */
 char* proceso_global;
 struct lista* lista_hijos;
+struct manager_data manager;
 struct worker_data worker;
 
 // Para mostrar procesos en consola, descomentar todas las líneas con '///' en funciones.c y main.c

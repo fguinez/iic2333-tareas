@@ -13,6 +13,7 @@
 
 extern char* proceso_global;
 extern struct lista* lista_hijos;
+extern struct manager_data manager;
 extern struct worker_data worker;
 
 
@@ -72,7 +73,8 @@ void strip(char* s)
 /* Crea los hijos de un proceso manager*/
 void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
     char type = strsep(&proceso, ",")[0];
-    int timeout = atoi(strsep(&proceso, ","));
+    manager.nro_proceso = nro_proceso;
+    manager.timeout = atoi(strsep(&proceso, ","));
     int n = atoi(strsep(&proceso, ","));
 
     /* Crea un array con los hijos*/
@@ -86,7 +88,7 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
         };
     };
 
-    time_t init_time = time(NULL);
+    manager.init_time = time(NULL);
 
     /* Para cada hijo, hacemos fork y execve*/
     for (int i = 0; i<n; i++){
@@ -109,7 +111,7 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
             int hijo = atoi(hijos[i]);
 
             // Insertamos al hijo en lista_hijos
-            insert(&childpid, &hijo, &nro_proceso);
+            insert(&childpid, &hijo);
         }
     }
 
@@ -129,7 +131,7 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
             };
             actual = actual->sig;
         };
-        if (time(NULL) - init_time > timeout)
+        if (time(NULL) - manager.init_time > manager.timeout)
         {
             ///printf("P%i (%c): Se acabó el tiempo para mis hijos (%i segundos)\n", nro_proceso, type, timeout);
             actual = lista_hijos;
@@ -140,14 +142,12 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
                     ///printf("P%i (%c): Abortando P%i...\n", nro_proceso, type, actual->nro_proceso);
                 actual = actual->sig;
             };
-            usleep(500000);
-            break;
         };
         
     } while (continue_wait);
 
     // Guardamos el archivo de salida
-    guardar_archivo_manager(type, nro_proceso);
+    guardar_archivo_manager(type);
 
     // Liberamos memoria
     free(hijos);
@@ -210,13 +210,7 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
             worker.childpid = childpid;
             
             // Esperamos a que el hijo termine
-            int wait_result;
-            do {
-                wait_result = waitpid(childpid, &worker.status, WNOHANG);
-                sleep(1);
-                worker.total_time = time(NULL) - worker.init_time;
-
-            } while (wait_result == 0);
+            esperar_hijo_worker();
             
             ///printf("P%i (W): Child %i exit code is: %d\n",nro_proceso, childpid, WEXITSTATUS(worker.status));
 
@@ -246,20 +240,20 @@ void signal_sigint_handler_root(int sig){
     }
     else{
         struct lista* p;
-        int nro_padre = lista_hijos->nro_padre;
         p = lista_hijos;
-        ///printf("P%i (R): Enviando señal a hijo %i\n", nro_padre, lista_hijos->hijo);
+        ///printf("P%i (R): Enviando señal a hijo %i\n", manager.nro_proceso, lista_hijos->hijo);
         kill(lista_hijos->hijo, SIGABRT);
         while (p->sig!= NULL){
             p = p->sig;
-            ///printf("P%i (R): Enviando señal a hijo %i\n", nro_padre, p->hijo);
+            ///printf("P%i (R): Enviando señal a hijo %i\n", manager.nro_proceso, p->hijo);
             kill(p->hijo, SIGABRT);
         };
-        usleep(500000);
+        // Esperamos a los hijos
+        esperar_hijos_manager();
 
         // Se guarda el archivo de salida
         char type = 'R';
-        guardar_archivo_manager(type, nro_padre);
+        guardar_archivo_manager(type);
     };
     /* Finalmente le hago abort al proceso root */
     pid_t actual = getpid();
@@ -280,20 +274,20 @@ void signal_sigabrt_handler(int sig){
     }
     else{
         struct lista* p;
-        int nro_padre = lista_hijos->nro_padre;
         p = lista_hijos;
-        ///printf("P%i (M): Enviando señal a hijo %i\n", nro_padre, lista_hijos->hijo);
+        ///printf("P%i (M): Enviando señal a hijo %i\n", manager.nro_proceso, lista_hijos->hijo);
         kill(lista_hijos->hijo, SIGABRT);
         while (p->sig!= NULL){
             p = p->sig;
-            ///printf("P%i (M): Enviando señal a hijo %i\n", nro_padre, p->hijo);
+            ///printf("P%i (M): Enviando señal a hijo %i\n", manager.nro_proceso, p->hijo);
             kill(p->hijo, SIGABRT);
         };
-        usleep(500000);
+        // Esperamos a que todos los hijos terminen
+        esperar_hijos_manager();
 
         // Se guarda el archivo de salida
         char type = 'M';
-        guardar_archivo_manager(type, nro_padre);
+        guardar_archivo_manager(type);
     };
 
     /* Finalmente le hago abort al proceso manager */
@@ -312,7 +306,8 @@ void signal_sigabrt_handler_worker(int sig){
     kill(worker.childpid, SIGABRT);
 
     // Esperamos la respuesta del hijo de worker
-    waitpid(worker.childpid, &worker.status, WUNTRACED);
+    //waitpid(worker.childpid, &worker.status, WUNTRACED);
+    esperar_hijo_worker();
 
     // Guardamos el archivo de salida
     guardar_archivo_worker(1);
@@ -323,7 +318,7 @@ void signal_sigabrt_handler_worker(int sig){
 
 /* Función que inserta valores en la variable global lista_hijos*/
 /* Es una lista enlazada. Está definida en el header de funciones*/
-void insert(pid_t* hijo, int* nro_proceso, int* nro_padre)
+void insert(pid_t* hijo, int* nro_proceso)
 {
     struct lista* q;
     struct lista* p;
@@ -331,7 +326,6 @@ void insert(pid_t* hijo, int* nro_proceso, int* nro_padre)
     q->sig =         NULL;
     q->hijo =        *hijo;
     q->nro_proceso = *nro_proceso;
-    q->nro_padre =   *nro_padre;
     p = lista_hijos;
     if (p == NULL){
         lista_hijos = q;
@@ -350,13 +344,52 @@ void insert(pid_t* hijo, int* nro_proceso, int* nro_padre)
 
 
 
+// ESPERA DE HIJOS
+// Espera a todos los hijos de un proceso Manager o Root
+void esperar_hijos_manager(){
+    struct lista* actual;
+    int continue_wait = 0;
+    pid_t cpid;
+    do {
+        actual = lista_hijos;
+        continue_wait = 0;
+        while (actual != NULL)
+        {
+            cpid = waitpid(actual->hijo, NULL, WNOHANG);
+            if (cpid == 0)
+            {
+                continue_wait = 1;
+            };
+            actual = actual->sig;
+        };
+    } while (continue_wait);
+}
+
+// espera al hijo de un proceso Worker
+void esperar_hijo_worker(){
+    int wait_result;
+    do {
+        wait_result = waitpid(worker.childpid, &worker.status, WNOHANG);
+        sleep(1);
+        worker.total_time = time(NULL) - worker.init_time;
+
+    } while (wait_result == 0);
+};
+
+
+
+
+
+
+
+
 // GUARDADO DE ARCHIVOS
 // Guarda el archivo de salida para procesos Manager y Root
-void guardar_archivo_manager(char type, int nro_padre)
+void guardar_archivo_manager(char type)
 {
     // Se define el nombre del archivo de salida
     char filename[10];
-    sprintf(filename, "%d.txt", nro_padre);
+    sprintf(filename, "%d.txt", manager.nro_proceso);
 
     // Se crea el archivo
     FILE* file = fopen(filename, "w");
@@ -375,7 +408,7 @@ void guardar_archivo_manager(char type, int nro_padre)
         // Comprobamos que child_file existe
         if(!child_file)
         {
-            ///printf("P%i (%c): No se ha encontrado el archivo %s\n", nro_padre, type, child_filename);
+            ///printf("P%i (%c): No se ha encontrado el archivo %s\n", manager.nro_proceso, type, child_filename);
             p = p->sig;
             continue;
         };
@@ -393,7 +426,7 @@ void guardar_archivo_manager(char type, int nro_padre)
         // Avanzamos al siguiente hijo
         p = p->sig;
     };
-    ///printf("P%i (%c): Archivo %s generado\n", nro_padre, type, filename);
+    ///printf("P%i (%c): Archivo %s generado\n", manager.nro_proceso, type, filename);
     fclose(file);
 };
 

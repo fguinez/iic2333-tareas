@@ -21,7 +21,6 @@ int main(int argc, char **argv)
 
     /* Guardar los argumentos en variables*/
     FILE* input_stream = fopen(argv[1], "r");
-    /*FILE* output_stream = fopen(argv[2], "r");*/
     int Q = atoi(argv[3]);
     int q = atoi(argv[4]);
     int S = atoi(argv[5]);
@@ -45,7 +44,7 @@ int main(int argc, char **argv)
     InputFile* proob;
     proob = read_file(argv[1]);
     printf("Linea 1: %s\n", proob->lines[0][0]);
-    create_process(proob, starting_queue, 3, Q);
+    create_process(proob, starting_queue, Q);
 
     /* Variables para guardar los procesos terminados*/
     /* Los procesos terminados van a un arreglo*/
@@ -198,8 +197,17 @@ int main(int argc, char **argv)
     printf("RESPONSE TIME: %d\n", finished[0]->response_time);
     printf("WAITING TIME: %d\n", finished[0]->waiting_time);
 
-
-
+    // Guardamos el resumen en el archivo de salida indicado
+    FILE* output_stream = fopen(argv[2], "w");
+    for (int i=0; i<total_process;i++){
+        // Escribimos una línea por proceso
+        fprintf(
+            output_stream,
+            "%s,%i,%i,%i,%i,%i\n",
+            finished[i]->name,            finished[i]->chosen,        finished[i]->interrumpions, 
+            finished[i]->turnaround_time, finished[i]->response_time, finished[i]->waiting_time
+        );
+    };
 
 
 
@@ -207,7 +215,7 @@ int main(int argc, char **argv)
     for (int i=0; i<total_process;i++){
         printf("PID: %d\n", finished[i]->PID);
         free(finished[i]);
-    }
+    };
     free(processing);
     free_memory(starting_queue);
     input_file_destroy(proob);

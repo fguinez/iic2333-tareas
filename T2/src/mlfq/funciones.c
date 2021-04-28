@@ -41,8 +41,8 @@ void create_queues(struct Queue* actual, int remaining){
 }
 
 /* Función para crear procesos desde el input*/
-void create_process(InputFile* proob, struct Queue* starting_queue, int total, int Q){
-    for (int i = 0; i <total; i++){
+void create_process(InputFile* proob, struct Queue* starting_queue, int Q){
+    for (int i = 0; i < proob->len; i++){
         char* name = proob->lines[i][0];
         int PID = atoi(proob->lines[i][1]);
         int starting_time = atoi(proob->lines[i][2]);

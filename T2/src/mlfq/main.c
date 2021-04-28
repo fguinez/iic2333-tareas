@@ -4,6 +4,9 @@
 #include "funciones.h"
 #include "../file_manager/manager.h"
 
+
+
+
 int main(int argc, char **argv)
 {
     /* Revisar que la cantidad de argumentos sea correcta*/

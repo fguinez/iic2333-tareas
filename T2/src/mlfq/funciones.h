@@ -1,11 +1,33 @@
 #pragma once
 #include <stdio.h>
 #include "../file_manager/manager.h"
+
+
+
+
+/*Status information:
+ * 0 --> RUNNING
+ * 1 --> READY
+ * 2 --> WAITING
+ * 3 --> FINISHED
+ * 4 --> WAITING TO BEGIN* */
+enum s {
+    RUNNING,
+    READY,
+    WAITING,
+    FINISHED,
+    WAITING_TO_BEGIN
+};
+
+/*Started information:
+ * 0 --> NO
+ * 1 --> YES */
+
 struct Process{
     int PID;
     char* name;
     int priority;
-    int status;
+    enum s status;
     int waiting_time;
     int response_time;
     int turnaround_time;
@@ -25,17 +47,6 @@ struct Process{
 
 
 };
-
-/*Status information:
- * 0 --> RUNNING
- * 1 --> READY
- * 2 --> WAITING
- * 3 --> FINISHED
- * 4 --> WAITING TO BEGIN* */
-
-/*Started information:
- * 0 --> NO
- * 1 --> YES */
 
 struct Queue{
     struct Queue* next;

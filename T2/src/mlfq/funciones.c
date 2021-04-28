@@ -43,12 +43,14 @@ void create_queues(struct Queue* actual, int remaining){
 /* Función para crear procesos desde el input*/
 void create_process(InputFile* proob, struct Queue* starting_queue, int Q){
     for (int i = 0; i < proob->len; i++){
+        // Definimos variables para los datos de la línea i
         char* name = proob->lines[i][0];
         int PID = atoi(proob->lines[i][1]);
         int starting_time = atoi(proob->lines[i][2]);
         int cycles = atoi(proob->lines[i][3]);
         int wait = atoi(proob->lines[i][4]);
         int waiting_delay = atoi(proob->lines[i][5]);
+        // Ingresamos las variable en un nuevo struct de proceso
         struct Process* new;
         new = malloc(sizeof(struct Process));
         new->name = name;
@@ -63,11 +65,11 @@ void create_process(InputFile* proob, struct Queue* starting_queue, int Q){
         new->total_time_running = 0;
         new->interrumpions = 0;
         if (new->starting_time == 0){
-            new->status = 1;
+            new->status = READY;
             new->started = 1;
         }
         else {
-            new->status = 2;
+            new->status = WAITING;
             new->started = 0;
         }
         insert_in_order(starting_queue, new);
@@ -84,7 +86,6 @@ int insert_in_order(struct Queue* starting_queue, struct Process* new){
         return 1;
     }
     else{
-
         struct Process* actual_process;
         actual_process = starting_queue->first;
         if (actual_process->next == NULL) {
@@ -112,6 +113,16 @@ int insert_in_order(struct Queue* starting_queue, struct Process* new){
 
     }
     printf("HA HABIDO UN ERROR, QUEDÓ EL SAPO\n");
+    //      
+    //                 .'":""".
+    //               .::__'__ ::.
+    //               ': o / o :>'
+    //                   <,_  )
+    //                 \/=='\ /
+    //           _.-----'---'/-----._
+    //          /        \-//        
+    //                    \/
+    //      
     return 5;
 }
 

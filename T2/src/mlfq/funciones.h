@@ -5,6 +5,16 @@
 
 
 
+/*NEXT EVENT INFORMATION
+* 0 --> WAIT
+* 1 --> QUANTUM
+* 2 --> CYCLE*/
+enum event_t {
+    WAIT,
+    QUANTUM,
+    CYCLE
+};
+
 /*Status information:
  * 0 --> RUNNING
  * 1 --> READY
@@ -44,8 +54,6 @@ struct Process{
     int interrumpions;
     int chosen;
     int finished_time;
-
-
 };
 
 struct Queue{

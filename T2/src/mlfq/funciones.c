@@ -80,38 +80,36 @@ void create_process(InputFile* proob, struct Queue* starting_queue, int Q){
 
 /* Función para insertar los procesos en la primera cola según su tiempo de llegada*/
 int insert_in_order(struct Queue* starting_queue, struct Process* new){
-    /* Caso 1: No hay procesos en la cola*/
-    if (starting_queue->first == NULL){
+    struct Process* actual_process;
+    struct Process* pre_actual_process;
+    pre_actual_process = NULL;
+    actual_process = starting_queue->first;
+    // Caso 1: La cola está vacía
+    if (starting_queue->first == NULL) {
         starting_queue->first = new;
-        return 1;
+        return 0;
     }
-    else{
-        struct Process* actual_process;
-        actual_process = starting_queue->first;
-        if (actual_process->next == NULL) {
-            /* Caso 2: Solo hay 1 proceso en la cola*/
-            if (actual_process->starting_time >= new->starting_time) {
+
+    // Caso 2: La cola ya tiene elementos
+    // Recorremos la cola
+    while (actual_process != NULL){
+        // Se inserta el nuevo proceso segun tiempo de llegada
+        if (actual_process->starting_time >= new->starting_time){
+            if (pre_actual_process == NULL) {
                 new->next = actual_process;
                 starting_queue->first = new;
-            }
-            else{
-                actual_process->next = new;
-            }
-            return 2;
-        }
-        else{
-            /* Caso 3: Hay más de 1 proceso en la cola*/
-            while (actual_process->next != NULL){
-                if (actual_process->next->starting_time >= new->starting_time){
-                    new->next = actual_process->next;
-                    actual_process->next = new;
-                    return 3;
-                }
-                actual_process = actual_process->next;
-            }
-        }
+            } else {
+                new->next = actual_process;
+                pre_actual_process->next = new;
+            };
+            return 0;
+        };
+        pre_actual_process = actual_process;
+        actual_process = actual_process->next;
 
-    }
+    };
+    pre_actual_process->next = new;
+    return 0;
     printf("HA HABIDO UN ERROR, QUEDÓ EL SAPO\n");
     //      
     //                 .'":""".
@@ -181,40 +179,45 @@ struct Process* extract_first_ready_process(struct Queue* actual_queue, int time
         struct Process* actual_process;
         struct Process* retorner;
         actual_process = actual_queue->first;
+
+        // NOTA PARA EL FUTURO: Revisar si WAITING debe actualizarse antes o después de revisar READY
+
         /*Reviso primero si es que es el primer elemento de la lista el que tiene que salir*/
         /* Si está en waiting, veo si es que ya debería haber empezado */
-        if (actual_process->status == 2){
+        if (actual_process->status == WAITING){
+            /* Veo si ya es su momento de comenzar a ejecutar por primera vez */
             if (actual_process->starting_time <= time && actual_process->started == 0){
                 actual_process->started = 1;
-                actual_process->status = 1;
+                actual_process->status = READY;
             }
             /* Si está en waiting, veo si es que ya terminó su waiting delay */
-            if (time - actual_process->waiting_since >= actual_process->waiting_delay && actual_process->started == 2){
-                actual_process->status = 1;
+            if (time - actual_process->waiting_since >= actual_process->waiting_delay && actual_process->started == 1){
+                actual_process->status = READY;
             }
         }
 
         /* Si está en ready, lo extraigo y actualizo la lista */
-        if (actual_process->status == 1){
+        if (actual_process->status == READY){
             actual_queue->first = actual_process->next;
             return actual_process;
         }
         /* Ahora empiezo a buscar en toda la cola */
         while (actual_process->next != NULL){
             /* Si está en waiting, veo si es que ya debería haber empezado */
-            if (actual_process->next->status == 2){
+            if (actual_process->next->status == WAITING){
+                /* Veo si ya es su momento de comenzar a ejecutar por primera vez */
                 if (actual_process->next->starting_time <= time && actual_process->next->started == 0){
-                    actual_process->next->status = 1;
+                    actual_process->next->status = READY;
                     actual_process->next->started = 1;
                 }
                 /* Si está en waiting, veo si es que ya terminó su waiting delay */
-                if (time - actual_process->next->waiting_since >= actual_process->next->waiting_delay  && actual_process->started == 2){
-                    actual_process->next->status = 1;
+                if (time - actual_process->next->waiting_since >= actual_process->next->waiting_delay  && actual_process->started == 1){
+                    actual_process->next->status = READY;
                 }
             }
 
             /* Si está en ready, lo extraigo y actualizo la lista */
-            if (actual_process->next->status == 1){
+            if (actual_process->next->status == READY){
                 retorner = actual_process->next;
                 actual_process->next = actual_process->next->next;
                 return retorner;

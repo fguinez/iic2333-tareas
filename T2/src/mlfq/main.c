@@ -198,7 +198,7 @@ int main(int argc, char **argv)
 
                 // Imprimimos los tiempos para cada evento
                 printf("___________________________________\n");
-                printf("PROCESO: %d\n", processing->PID);
+                printf("PROCESO %d: %s\n", processing->PID, processing->name);
                 printf("---------->quantum = %d\n", quantum);
                 printf("---------->next waiting = %d\n", next_waiting);
                 printf("---------->cycle ending:  = %d\n", cycle_ending);

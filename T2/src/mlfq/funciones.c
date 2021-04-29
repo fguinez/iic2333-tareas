@@ -65,6 +65,7 @@ void create_process(InputFile* proob, struct Queue* starting_queue, int Q){
         new->total_time_running = 0;
         new->interrumpions = 0;
         new->started = 0;
+        new->chosen = 0;
         if (new->starting_time == 0){
             new->status = READY;
         }

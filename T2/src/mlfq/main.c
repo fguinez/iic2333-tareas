@@ -131,7 +131,7 @@ int main(int argc, char **argv)
                 printf("PROCESO HA TERMINADO\n");
                 /* Actualizamos sus parámetros*/
                 processing->finished_time = time;
-                processing->turnaround_time = processing->finished_time - processing->starting_time;
+                processing->turnaround_time = time - processing->starting_time;
                 processing->waiting_time = processing->turnaround_time - processing->cycles;
                 processing->next = NULL;
                 /* Lo metemos al arreglo*/

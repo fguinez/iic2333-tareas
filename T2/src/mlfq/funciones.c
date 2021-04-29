@@ -64,13 +64,12 @@ void create_process(InputFile* proob, struct Queue* starting_queue, int Q){
         new->time_executed_without_wait = 0;
         new->total_time_running = 0;
         new->interrumpions = 0;
+        new->started = 0;
         if (new->starting_time == 0){
             new->status = READY;
-            new->started = 1;
         }
         else {
             new->status = WAITING;
-            new->started = 0;
         }
         insert_in_order(starting_queue, new);
 
@@ -94,7 +93,7 @@ int insert_in_order(struct Queue* starting_queue, struct Process* new){
     // Recorremos la cola
     while (actual_process != NULL){
         // Se inserta el nuevo proceso segun tiempo de llegada
-        if (actual_process->starting_time >= new->starting_time){
+        if (actual_process->starting_time > new->starting_time){
             if (pre_actual_process == NULL) {
                 new->next = actual_process;
                 starting_queue->first = new;
@@ -187,7 +186,6 @@ struct Process* extract_first_ready_process(struct Queue* actual_queue, int time
         if (actual_process->status == WAITING){
             /* Veo si ya es su momento de comenzar a ejecutar por primera vez */
             if (actual_process->starting_time <= time && actual_process->started == 0){
-                actual_process->started = 1;
                 actual_process->status = READY;
             }
             /* Si está en waiting, veo si es que ya terminó su waiting delay */
@@ -208,7 +206,6 @@ struct Process* extract_first_ready_process(struct Queue* actual_queue, int time
                 /* Veo si ya es su momento de comenzar a ejecutar por primera vez */
                 if (actual_process->next->starting_time <= time && actual_process->next->started == 0){
                     actual_process->next->status = READY;
-                    actual_process->next->started = 1;
                 }
                 /* Si está en waiting, veo si es que ya terminó su waiting delay */
                 if (time - actual_process->next->waiting_since >= actual_process->next->waiting_delay  && actual_process->started == 1){

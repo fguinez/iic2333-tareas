@@ -188,11 +188,11 @@ struct Process* extract_first_ready_process(struct Queue* actual_queue, int time
         /* Si está en waiting, veo si es que ya debería cambiar a ready */
         if (actual_process->status == WAITING){
             /* Veo si ya es su momento de comenzar a ejecutar por primera vez */
-            if (actual_process->starting_time <= time && actual_process->started == 0){
+            if ((actual_process->starting_time <= time) && (actual_process->started == 0)){
                 actual_process->status = READY;
             }
             /* Si está en waiting, veo si es que ya terminó su waiting delay */
-            if (time - actual_process->waiting_since >= actual_process->waiting_delay && actual_process->started == 1){
+            if (((time - actual_process->waiting_since) >= actual_process->waiting_delay) && (actual_process->started == 1)){
                 actual_process->status = READY;
             }
         }
@@ -207,11 +207,11 @@ struct Process* extract_first_ready_process(struct Queue* actual_queue, int time
             /* Si está en waiting, veo si es que ya debería haber empezado */
             if (actual_process->next->status == WAITING){
                 /* Veo si ya es su momento de comenzar a ejecutar por primera vez */
-                if (actual_process->next->starting_time <= time && actual_process->next->started == 0){
+                if ((actual_process->next->starting_time <= time) && (actual_process->next->started == 0)){
                     actual_process->next->status = READY;
                 }
                 /* Si está en waiting, veo si es que ya terminó su waiting delay */
-                if (time - actual_process->next->waiting_since >= actual_process->next->waiting_delay  && actual_process->started == 1){
+                if (((time - actual_process->next->waiting_since) >= actual_process->next->waiting_delay)  && (actual_process->next->started == 1)){
                     actual_process->next->status = READY;
                 }
             }

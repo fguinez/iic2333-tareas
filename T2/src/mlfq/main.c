@@ -164,12 +164,7 @@ int main(int argc, char **argv)
             }
         }
 
-        if ( time == S * (times_used_S+1) ){
-            /* Revisamos si ocurre S*/
-            printf("------------------------------------------>PASANDO EL S en t = %d\n", time);
-            times_used_S += 1;
-            all_process_back_to_first_queue(starting_queue);
-        }
+        
 
         if (processing == NULL){
             /* Si no hay procesos en el scheduler, buscamos uno*/
@@ -237,6 +232,13 @@ int main(int argc, char **argv)
                     next_event_time = time + cycle_ending;
                 }
             }
+        }
+
+        if ( time == S * (times_used_S+1) ){
+            /* Revisamos si ocurre S*/
+            printf("------------------------------------------>PASANDO EL S en t = %d\n", time);
+            times_used_S += 1;
+            all_process_back_to_first_queue(starting_queue);
         }
 
 

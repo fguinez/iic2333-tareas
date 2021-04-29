@@ -182,7 +182,7 @@ struct Process* extract_first_ready_process(struct Queue* actual_queue, int time
         // NOTA PARA EL FUTURO: Revisar si WAITING debe actualizarse antes o después de revisar READY
 
         /*Reviso primero si es que es el primer elemento de la lista el que tiene que salir*/
-        /* Si está en waiting, veo si es que ya debería haber empezado */
+        /* Si está en waiting, veo si es que ya debería cambiar a ready */
         if (actual_process->status == WAITING){
             /* Veo si ya es su momento de comenzar a ejecutar por primera vez */
             if (actual_process->starting_time <= time && actual_process->started == 0){
@@ -240,3 +240,21 @@ struct Process* extract_first_ready_process_from_all_queues(struct Queue* starti
     }
     return NULL;
 }
+
+// Aplica los cambios en los atributos del proceso correspondientes a un evento QUANTUM
+struct Process* apply_quantum(struct Process* processing, int time){
+    processing->time_executed_without_wait += time - processing->time_started_running;
+    processing->interrumpions += 1;
+    processing->next = NULL;
+    processing->status = READY;
+    return processing;
+};
+
+// Aplica los cambios en los atributos del proceso correspondientes a un evento WAIT
+struct Process* apply_wait(struct Process* processing, int time){
+    processing->time_executed_without_wait = 0;
+    processing->waiting_since = time;
+    processing->next = NULL;
+    processing->status = WAITING;
+    return processing;
+};

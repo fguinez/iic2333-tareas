@@ -70,8 +70,10 @@ int main(int argc, char **argv)
     struct Process* processing;
     processing = malloc(sizeof(struct Process));
     processing = NULL;
-    int next_event_time = 10000;                    // Se inicializa a un número ridiculamente alto
-    enum event_t next_event_type = 4;                        // Se inicializa como un tipo inválido
+    int next_event_time = 10000;               // Se inicializa a un número ridiculamente alto
+    enum event_t next_event_type = 4;          // Se inicializa como un tipo inválido
+    int next_event_match_wait    = 0;          // Toma valor 1 cuando coincide un evento con WAIT
+    int next_event_match_cycle   = 0;          // Toma valor 1 cuando coincide un evento con CYCLE
     int times_used_S = 0;
     int ready = 0;
 
@@ -89,41 +91,62 @@ int main(int argc, char **argv)
             };
             /* Al proceso del schudeler le toca hacer wait*/
             if (next_event_type == WAIT && processing != NULL){
-                /* Aumentamos su prioridad */
-                if (processing->priority != Q-1){
-                    processing->priority += 1;
-                }
                 printf("PROCESO ENTRA A WAIT\n");
-                /* Actualizamos sus parámetros*/
-                processing->waiting_since = time;
-                processing->total_time_running += time - processing->time_started_running;
-                processing->next = NULL;
-                processing->status = WAITING;
-                processing->time_executed_without_wait = 0;
                 if (processing->priority != Q-1){
                     /* Aumentamos su prioridad */
                     processing->priority += 1;
                 }
-                /* Lo metemos de vuelta a la cola que corresponda*/
-                insert_in_specific_queue(starting_queue, processing, processing->priority);
-                processing = NULL;
+                
+                /* Actualizamos sus parámetros*/
+                apply_wait(processing, time);
+
+                // Actualizamos su tiempo de ejecución
+                processing->total_time_running += time - processing->time_started_running;
+
+                if (next_event_match_cycle != 1) {
+                    /* Lo metemos de vuelta a la cola que corresponda*/
+                    insert_in_specific_queue(starting_queue, processing, processing->priority);
+                    processing = NULL;
+                } else {
+                    printf("Además, entró a CYCLE\n");
+                    // Excepción cuando coincid wait y cycle
+                    next_event_type = CYCLE;
+                    next_event_match_cycle = 0;
+                };
             }
 
             if (next_event_type == QUANTUM && processing != NULL){
                 /* Al proceso se le acabó el quantum*/
                 printf("AL PROCESO %d SE LE HA ACABADO EL QUANTUM EN T = %d\n", processing->PID, time);
+                
                 if (processing->priority != 0){
-                    /* Dsiminuimos su prioridad */
+                    /* Disminuimos su prioridad */
                     processing->priority -= 1;
                 }
-                /* Actualizamos sus parámetros*/
-                processing->time_executed_without_wait += time - processing->time_started_running;
+                /* Actualizamos sus parámetros */
+                apply_quantum(processing, time);
+
+                // Actualizamos su tiempo de ejecución
                 processing->total_time_running += time - processing->time_started_running;
-                processing->interrumpions += 1;
-                processing->next = NULL;
-                /* Lo metemos donde le corresponda*/
-                insert_in_specific_queue(starting_queue, processing, processing->priority);
-                processing = NULL;
+
+                // Excepción cuando coincide quantum y wait
+                if (next_event_match_wait == 1) {
+                    printf("Además, entró a WAIT\n");
+                    /* Actualizamos sus parámetros */
+                    apply_wait(processing, time);
+                    next_event_match_wait = 0;
+                }
+                
+                if (next_event_match_cycle != 1) {
+                    /* Lo metemos de vuelta a la cola que corresponda*/
+                    insert_in_specific_queue(starting_queue, processing, processing->priority);
+                    processing = NULL;
+                } else {
+                    printf("Además, entró a CYCLE\n");
+                    // Excepción cuando coincide quantum y cycle
+                    next_event_type = CYCLE;
+                    next_event_match_cycle = 0;
+                };
             }
 
             if (next_event_type == CYCLE){
@@ -139,7 +162,6 @@ int main(int argc, char **argv)
                 processing = NULL;
                 ready += 1;
             }
-
         }
 
         if ( time == S * (times_used_S+1) ){
@@ -155,6 +177,7 @@ int main(int argc, char **argv)
 
             if (processing != NULL){
                 /*Si encuentra uno, seteamos sus nuevos parámetros*/
+                processing->status = RUNNING;
                 processing->next = NULL;
                 processing->time_started_running = time;
                 processing->chosen += 1;
@@ -185,17 +208,26 @@ int main(int argc, char **argv)
                 printf("---------->next waiting = %d\n", next_waiting);
                 printf("---------->cycle ending:  = %d\n", cycle_ending);
 
-                if (quantum < next_waiting && quantum < cycle_ending){
+                if (quantum <= next_waiting && quantum <= cycle_ending){
                     /* Si el quantum es el que viene, lo seteamos*/
                     printf("PROXIMO EVENTO ES QUE SE LE ACABA EL QUANTUM\n");
                     next_event_type = QUANTUM;
                     next_event_time = time + quantum;
+                    if (quantum == next_waiting){
+                        next_event_match_wait = 1;
+                    }
+                    if (quantum == cycle_ending) {
+                        next_event_match_cycle = 1;
+                    }
                 }
-                else if (next_waiting < quantum && next_waiting < cycle_ending){
+                else if (next_waiting < quantum && next_waiting <= cycle_ending){
                     /* Si el wait es el que viene, lo seteamos*/
                     printf("PROXIMO EVENTO ES QUE VA A HACER WAIT\n");
                     next_event_type = WAIT;
                     next_event_time = time + next_waiting;
+                    if (next_waiting == cycle_ending) {
+                        next_event_match_cycle = 1;
+                    }
                 }
 
                 else{

@@ -73,3 +73,5 @@ struct Process* extract_first_ready_process(struct Queue*, int);
 struct Process* extract_first_ready_process_from_all_queues(struct Queue*, int);
 int insert_in_order(struct Queue*, struct Process*);
 void all_process_back_to_first_queue(struct Queue*);
+struct Process* apply_quantum(struct Process*, int);
+struct Process* apply_wait(struct Process*, int);

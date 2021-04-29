@@ -56,6 +56,7 @@ void create_process(InputFile* proob, struct Queue* starting_queue, int Q){
         new->name = name;
         new->PID = PID;
         new->starting_time = starting_time;
+        new->insert_time = starting_time;
         new->cycles = cycles;
         new->wait = wait;
         new->waiting_delay = waiting_delay;
@@ -94,7 +95,7 @@ int insert_in_order(struct Queue* starting_queue, struct Process* new){
     // Recorremos la cola
     while (actual_process != NULL){
         // Se inserta el nuevo proceso segun tiempo de llegada
-        if (actual_process->starting_time > new->starting_time){
+        if (actual_process->insert_time > new->insert_time){
             if (pre_actual_process == NULL) {
                 new->next = actual_process;
                 starting_queue->first = new;
@@ -167,7 +168,8 @@ void insert_in_specific_queue(struct Queue* starting_queue, struct Process* actu
     while (tmp->priority != priority){
         tmp = tmp->next;
     }
-    insert_in_queue(tmp, actual_process);
+    insert_in_order(tmp, actual_process);
+    //insert_in_queue(tmp, actual_process);
 }
 
 /* Función que retorna el proceso de mayor prioridad en estado ready de todos para 1 cola*/

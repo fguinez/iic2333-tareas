@@ -91,7 +91,7 @@ int main(int argc, char **argv)
             };
             /* Al proceso del schudeler le toca hacer wait*/
             if (next_event_type == WAIT && processing != NULL){
-                printf("PROCESO ENTRA A WAIT\n");
+                printf("PROCESO ENTRA A WAIT por %i\n", processing->waiting_delay);
                 if (processing->priority != Q-1){
                     /* Aumentamos su prioridad */
                     processing->priority += 1;
@@ -105,6 +105,7 @@ int main(int argc, char **argv)
 
                 if (next_event_match_cycle != 1) {
                     /* Lo metemos de vuelta a la cola que corresponda*/
+                    processing->insert_time = time;
                     insert_in_specific_queue(starting_queue, processing, processing->priority);
                     processing = NULL;
                 } else {
@@ -139,6 +140,7 @@ int main(int argc, char **argv)
                 
                 if (next_event_match_cycle != 1) {
                     /* Lo metemos de vuelta a la cola que corresponda*/
+                    processing->insert_time = time;
                     insert_in_specific_queue(starting_queue, processing, processing->priority);
                     processing = NULL;
                 } else {
@@ -198,7 +200,7 @@ int main(int argc, char **argv)
 
                 // Imprimimos los tiempos para cada evento
                 printf("___________________________________\n");
-                printf("PROCESO %d: %s\n", processing->PID, processing->name);
+                printf("PROCESO %d: %s       (T=%i)\n", processing->PID, processing->name, time);
                 printf("---------->quantum = %d\n", quantum);
                 printf("---------->next waiting = %d\n", next_waiting);
                 printf("---------->cycle ending:  = %d\n", cycle_ending);

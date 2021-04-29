@@ -43,6 +43,7 @@ struct Process{
     int turnaround_time;
     struct Process* next;
     int starting_time;
+    int insert_time;
     int cycles;
     int wait;
     int waiting_delay;

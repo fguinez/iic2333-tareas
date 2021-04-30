@@ -29,10 +29,10 @@ int main(int argc, char **argv)
     ///printf("&&&&&&&&&&&&&&&&&&&&&&\n");
     if(argc != 3)
     {
-        ///printf("ARGUMENTOS RECIBIDOS: %d\n", argc);
-        ///printf("Modo de uso: %s <input> <process>\nDonde:\n", argv[0]);
-        ///printf("\t\"<input>\" es la ruta al archivo de input\n");
-        ///printf("\t\"<process>\" es índice del proceso desde donde debe empezar la ejecución\n");
+        printf("ARGUMENTOS RECIBIDOS: %d\n", argc);
+        printf("Modo de uso: %s <input> <process>\nDonde:\n", argv[0]);
+        printf("\t\"<input>\" es la ruta al archivo de input\n");
+        printf("\t\"<process>\" es índice del proceso desde donde debe empezar la ejecución\n");
         return 1;
     }
     /* Abre el input file */
@@ -41,12 +41,17 @@ int main(int argc, char **argv)
     // Comprueba que el archivo exista
     if(!input_stream)
     {
-        ///printf("No se ha encontrado el archivo %s\n", argv[1]);
+        printf("No se ha encontrado el archivo %s\n", argv[1]);
         return 2;
     };
 
     /* Sacamos el índice y el total de procesos */
     int indice = atoi(argv[2]);
+    if (argv[2] >= indice) {
+        printf("Debes ingresar un índice <process> válido\n");
+        fclose(input_stream);
+        return 3;
+    };
     int total_procesos;
     fscanf(input_stream, "%d", &total_procesos);
 

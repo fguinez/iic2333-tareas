@@ -137,9 +137,7 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
             actual = lista_hijos;
             while (actual != NULL)
             {
-                int result = kill(actual->hijo, SIGABRT);
-                ///if (result == 0)
-                    ///printf("P%i (%c): Abortando P%i...\n", nro_proceso, type, actual->nro_proceso);
+                kill(actual->hijo, SIGABRT);
                 actual = actual->sig;
             };
         };

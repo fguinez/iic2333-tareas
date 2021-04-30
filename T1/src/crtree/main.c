@@ -120,6 +120,7 @@ int main(int argc, char **argv)
 
     // Liberamos memoria
     free(proceso_pointer);
+    free(proceso_copia);
     struct lista* a;
     struct lista* b;
     a = lista_hijos;

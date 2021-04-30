@@ -48,3 +48,7 @@ void guardar_archivo_manager(char);
 void guardar_archivo_worker(int);
 
 void strip(char*);
+
+void free_manager();
+
+void free_worker();

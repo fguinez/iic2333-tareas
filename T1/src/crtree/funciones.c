@@ -12,10 +12,13 @@
 
 
 extern char* proceso_global;
+extern char* proceso_pointer;
 extern struct lista* lista_hijos;
 extern struct manager_data manager;
 extern struct worker_data worker;
+extern FILE* input_stream;
 
+char** hijos;
 
 // Para mostrar procesos en consola, descomentar todas las líneas con '///' en funciones.c y main.c
 
@@ -78,7 +81,7 @@ void crear_hijos_manager(char* proceso, char* input_filename, int nro_proceso){
     int n = atoi(strsep(&proceso, ","));
 
     /* Crea un array con los hijos*/
-    char** hijos = malloc(n+2 * sizeof(char*));
+    hijos = malloc((n+2) * sizeof(char*));
     for (int i=0; i<n; i++)
     {
         hijos[i] = strsep(&proceso, ",");
@@ -201,6 +204,10 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
             if (err == -1) {
                 int errve = errno;
                 printf("%s\n", strerror(errve));
+
+                // Liberamos memoria
+                free_worker();
+
                 exit(errve);
             };
             
@@ -253,6 +260,10 @@ void signal_sigint_handler_root(int sig){
         char type = 'R';
         guardar_archivo_manager(type);
     };
+
+    // Liberamos memoria
+    free_manager();
+
     /* Finalmente le hago abort al proceso root */
     pid_t actual = getpid();
     kill(actual, SIGKILL);
@@ -288,6 +299,9 @@ void signal_sigabrt_handler(int sig){
         guardar_archivo_manager(type);
     };
 
+    // Liberamos memoria
+    free_manager();
+
     /* Finalmente le hago abort al proceso manager */
     pid_t actual = getpid();
     kill(actual, SIGKILL);
@@ -309,6 +323,9 @@ void signal_sigabrt_handler_worker(int sig){
 
     // Guardamos el archivo de salida
     guardar_archivo_worker(1);
+
+    // Liberamos memoria
+    free_worker();
     
     kill(wpid, SIGKILL);
 };
@@ -450,3 +467,44 @@ void guardar_archivo_worker(int interrupted)
     ///printf("P%i (W): Archivo %s generado\n", worker.nro_proceso, filename);
 };
 
+
+
+
+
+
+
+// FREE
+void free_manager(){
+    // Cerramos el archivo de input
+    fclose(input_stream);
+
+    // Liberamos memoria
+    free(proceso_pointer);
+    free(proceso_global);
+
+    struct lista* a;
+    struct lista* b;
+    a = lista_hijos;
+    while (a != NULL)
+    {
+        b = a;
+        a = a->sig;
+        free(b);
+    };
+    free(hijos);
+};
+
+void free_worker(){
+    // Cerramos el archivo de input
+    fclose(input_stream);
+
+    // Liberamos memoria
+    free(proceso_pointer);
+    free(proceso_global);
+
+    for (int i=0; i<worker.n+1; i++)
+    {
+        free(worker.args[i]);
+    };
+    free(worker.args);
+};

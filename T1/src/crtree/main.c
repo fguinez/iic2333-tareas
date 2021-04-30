@@ -15,9 +15,11 @@
  * ejecutando actualmente*/
 /* Puedes usar estas variables en cualquier archivo. Las programé para que se actualizaran según corresponda */
 char* proceso_global;
+char* proceso_pointer;
 struct lista* lista_hijos;
 struct manager_data manager;
 struct worker_data worker;
+FILE* input_stream;
 
 // Para mostrar procesos en consola, descomentar todas las líneas con '///' en funciones.c y main.c
 
@@ -27,19 +29,19 @@ int main(int argc, char **argv)
     ///printf("&&&&&&&&&&&&&&&&&&&&&&\n");
     if(argc != 3)
     {
-        ///printf("ARGUMENTOS RECIBIDOS: %d\n", argc);
-        ///printf("Modo de uso: %s <input> <process>\nDonde:\n", argv[0]);
-        ///printf("\t\"<input>\" es la ruta al archivo de input\n");
-        ///printf("\t\"<process>\" es índice del proceso desde donde debe empezar la ejecución\n");
+        printf("ARGUMENTOS RECIBIDOS: %d\n", argc);
+        printf("Modo de uso: %s <input> <process>\nDonde:\n", argv[0]);
+        printf("\t\"<input>\" es la ruta al archivo de input\n");
+        printf("\t\"<process>\" es índice del proceso desde donde debe empezar la ejecución\n");
         return 1;
     }
     /* Abre el input file */
-    FILE* input_stream = fopen(argv[1], "r");
+    input_stream = fopen(argv[1], "r");
 
     // Comprueba que el archivo exista
     if(!input_stream)
     {
-        ///printf("No se ha encontrado el archivo %s\n", argv[1]);
+        printf("No se ha encontrado el archivo %s\n", argv[1]);
         return 2;
     };
 
@@ -48,10 +50,17 @@ int main(int argc, char **argv)
     int total_procesos;
     fscanf(input_stream, "%d", &total_procesos);
 
+    // Chequeamos que el índice ingresado sea correcto
+    if ((indice >= total_procesos) || (indice < 0)) {
+        printf("Debes ingresar un índice <process> válido\n");
+        fclose(input_stream);
+        return 3;
+    };
+
     /* Como ya abrimos el archivo y ya tenemos el índice, buscamos el proceso asociado al índice */
     char* proceso = buscar_linea(argv[1], indice);
     strip(proceso);
-    char* proceso_pointer = proceso;
+    proceso_pointer = proceso;
     ///printf("P%i    : Ejecutando: %s\n", indice, proceso);
     char* proceso_copia;
     proceso_copia = strdup(proceso);
@@ -98,7 +107,6 @@ int main(int argc, char **argv)
           * en un mismo archivo, tal como lo pide el enunciado.*/
 
         ///printf("++++++++++++++++++++++++\n");
-        exit(0);
     }
 
     else{
@@ -112,7 +120,6 @@ int main(int argc, char **argv)
           * debiese guardar el resultado en un archivo como se pide en el enunciado*/
         ///printf("P%i (W): Terminado\n", indice);
         ///printf("++++++++++++++++++++++++\n");
-        exit(0);
     }
 
     // Cerramos el archivo de input

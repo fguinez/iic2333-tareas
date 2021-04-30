@@ -12,13 +12,13 @@ int main(int argc, char **argv)
     /* Revisar que la cantidad de argumentos sea correcta*/
     if(argc != 6)
     {
-        printf("ARGUMENTOS RECIBIDOS: %d\n", argc);
-        printf("Modo de uso: %s input output Q q S\nDonde:\n", argv[0]);
-        printf("\t\"input\" es la ruta al archivo de input\n");
-        printf("\t\"output\" es la ruta al archivo de output\n");
-        printf("\t\"Q\" es la cantidad de colas\n");
-        printf("\t\"q\" es el parámetro de quantum\n");
-        printf("\t\"S\" es el tiempo hasta que todos vuelvan a la cola de mayor prioridad\n");
+        ///printf("ARGUMENTOS RECIBIDOS: %d\n", argc);
+        ///printf("Modo de uso: %s input output Q q S\nDonde:\n", argv[0]);
+        ///printf("\t\"input\" es la ruta al archivo de input\n");
+        ///printf("\t\"output\" es la ruta al archivo de output\n");
+        ///printf("\t\"Q\" es la cantidad de colas\n");
+        ///printf("\t\"q\" es el parámetro de quantum\n");
+        ///printf("\t\"S\" es el tiempo hasta que todos vuelvan a la cola de mayor prioridad\n");
         return 1;
     }
 
@@ -31,8 +31,8 @@ int main(int argc, char **argv)
     /* Leer la cantidad de colas y crearlas*/
     int total_process;
     fscanf(input_stream, "%d", &total_process);
-    printf("TOTAL PROCESOS: %d\n", total_process);
-    printf("TOTAL COLAS: %d\n", Q);
+    ///printf("TOTAL PROCESOS: %d\n", total_process);
+    ///printf("TOTAL COLAS: %d\n", Q);
 
     /* Crea la cola inicial y después el resto*/
     struct Queue* starting_queue;
@@ -46,7 +46,7 @@ int main(int argc, char **argv)
     /* Usamos el file manager que nos dan para leer el input.txt*/
     InputFile* proob;
     proob = read_file(argv[1]);
-    printf("Linea 1: %s\n", proob->lines[0][0]);
+    ///printf("Linea 1: %s\n", proob->lines[0][0]);
     create_process(proob, starting_queue, Q);
 
 
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     //struct Process* aux;
     //aux = starting_queue->first;
     //while (aux) {
-    //    printf("%s\n", aux->name);
+    //    ///printf("%s\n", aux->name);
     //    aux = aux->next;
     //}
     //return 5;
@@ -68,7 +68,9 @@ int main(int argc, char **argv)
     // NOTA: Por qué el tiempo empezaba en 1?
     int time = 0;
     struct Process* processing;
+    struct Process* processing_pointer;
     processing = malloc(sizeof(struct Process));
+    processing_pointer = processing;
     processing = NULL;
     int next_event_time = 10000;               // Se inicializa a un número ridiculamente alto
     enum event_t next_event_type = 4;          // Se inicializa como un tipo inválido
@@ -87,11 +89,11 @@ int main(int argc, char **argv)
         /* Reviso si termina algún evento */
         if (time == next_event_time){
             if (processing == NULL) {
-                printf("Esto no debería ocurrir!!!! processing == NULL && time == next_event_time");
+                ///printf("Esto no debería ocurrir!!!! processing == NULL && time == next_event_time");
             };
             /* Al proceso del schudeler le toca hacer wait*/
             if (next_event_type == WAIT && processing != NULL){
-                printf("PROCESO ENTRA A WAIT por %i\n", processing->waiting_delay);
+                ///printf("PROCESO ENTRA A WAIT por %i\n", processing->waiting_delay);
                 if (processing->priority != Q-1){
                     /* Aumentamos su prioridad */
                     processing->priority += 1;
@@ -109,7 +111,7 @@ int main(int argc, char **argv)
                     insert_in_specific_queue(starting_queue, processing, processing->priority);
                     processing = NULL;
                 } else {
-                    printf("Además, entró a CYCLE\n");
+                    ///printf("Además, entró a CYCLE\n");
                     // Excepción cuando coincid wait y cycle
                     next_event_type = CYCLE;
                     next_event_match_cycle = 0;
@@ -118,7 +120,7 @@ int main(int argc, char **argv)
 
             if (next_event_type == QUANTUM && processing != NULL){
                 /* Al proceso se le acabó el quantum*/
-                printf("AL PROCESO %d SE LE HA ACABADO EL QUANTUM EN T = %d\n", processing->PID, time);
+                ///printf("AL PROCESO %d SE LE HA ACABADO EL QUANTUM EN T = %d\n", processing->PID, time);
                 
                 if (processing->priority != 0){
                     /* Disminuimos su prioridad */
@@ -132,7 +134,7 @@ int main(int argc, char **argv)
 
                 // Excepción cuando coincide quantum y wait
                 if (next_event_match_wait == 1) {
-                    printf("Además, entró a WAIT\n");
+                    ///printf("Además, entró a WAIT\n");
                     /* Actualizamos sus parámetros */
                     apply_wait(processing, time);
                     next_event_match_wait = 0;
@@ -144,7 +146,7 @@ int main(int argc, char **argv)
                     insert_in_specific_queue(starting_queue, processing, processing->priority);
                     processing = NULL;
                 } else {
-                    printf("Además, entró a CYCLE\n");
+                    ///printf("Además, entró a CYCLE\n");
                     // Excepción cuando coincide quantum y cycle
                     next_event_type = CYCLE;
                     next_event_match_cycle = 0;
@@ -153,7 +155,7 @@ int main(int argc, char **argv)
 
             if (next_event_type == CYCLE){
                 /* EL proceso termina*/
-                printf("PROCESO HA TERMINADO\n");
+                ///printf("PROCESO HA TERMINADO\n");
                 /* Actualizamos sus parámetros*/
                 processing->finished_time = time;
                 processing->turnaround_time = time - processing->starting_time;
@@ -199,15 +201,15 @@ int main(int argc, char **argv)
                 };
 
                 // Imprimimos los tiempos para cada evento
-                printf("___________________________________\n");
-                printf("PROCESO %d: %s       (T=%i)\n", processing->PID, processing->name, time);
-                printf("---------->quantum = %d\n", quantum);
-                printf("---------->next waiting = %d\n", next_waiting);
-                printf("---------->cycle ending:  = %d\n", cycle_ending);
+                ///printf("___________________________________\n");
+                ///printf("PROCESO %d: %s       (T=%i)\n", processing->PID, processing->name, time);
+                ///printf("---------->quantum = %d\n", quantum);
+                ///printf("---------->next waiting = %d\n", next_waiting);
+                ///printf("---------->cycle ending:  = %d\n", cycle_ending);
 
                 if (quantum <= next_waiting && quantum <= cycle_ending){
                     /* Si el quantum es el que viene, lo seteamos*/
-                    printf("PROXIMO EVENTO ES QUE SE LE ACABA EL QUANTUM\n");
+                    ///printf("PROXIMO EVENTO ES QUE SE LE ACABA EL QUANTUM\n");
                     next_event_type = QUANTUM;
                     next_event_time = time + quantum;
                     if (quantum == next_waiting){
@@ -219,7 +221,7 @@ int main(int argc, char **argv)
                 }
                 else if (next_waiting < quantum && next_waiting <= cycle_ending){
                     /* Si el wait es el que viene, lo seteamos*/
-                    printf("PROXIMO EVENTO ES QUE VA A HACER WAIT\n");
+                    ///printf("PROXIMO EVENTO ES QUE VA A HACER WAIT\n");
                     next_event_type = WAIT;
                     next_event_time = time + next_waiting;
                     if (next_waiting == cycle_ending) {
@@ -229,7 +231,7 @@ int main(int argc, char **argv)
 
                 else{
                     /* Si el término es lo que viene, lo seteamos*/
-                    printf("PROXIMO EVENTO ES QUE TERMINA EL CYCLE\n");
+                    ///printf("PROXIMO EVENTO ES QUE TERMINA EL CYCLE\n");
                     next_event_type = CYCLE;
                     next_event_time = time + cycle_ending;
                 }
@@ -238,7 +240,7 @@ int main(int argc, char **argv)
 
         if ( time == S * (times_used_S+1) ){
             /* Revisamos si ocurre S*/
-            printf("------------------------------------------>PASANDO EL S en t = %d\n", time);
+            ///printf("------------------------------------------>PASANDO EL S en t = %d\n", time);
             times_used_S += 1;
             all_process_back_to_first_queue(starting_queue);
         }
@@ -250,14 +252,14 @@ int main(int argc, char **argv)
 
 
     /* Ejemplo imprimir resumen*/
-    printf("_________________________________\n");
-    printf("IMPRIMIENDO RESUMEN DE DATOS:\n");
-    printf("PROCESO 1: %d\n", finished[0]->PID);
-    printf("ESCOGIDO: %d\n", finished[0]->chosen);
-    printf("INTERRUMPIDO: %d\n", finished[0]->interrumpions);
-    printf("TURNAROUND TIME: %d\n", finished[0]->turnaround_time);
-    printf("RESPONSE TIME: %d\n", finished[0]->response_time);
-    printf("WAITING TIME: %d\n", finished[0]->waiting_time);
+    ///printf("_________________________________\n");
+    ///printf("IMPRIMIENDO RESUMEN DE DATOS:\n");
+    ///printf("PROCESO 1: %d\n", finished[0]->PID);
+    ///printf("ESCOGIDO: %d\n", finished[0]->chosen);
+    ///printf("INTERRUMPIDO: %d\n", finished[0]->interrumpions);
+    ///printf("TURNAROUND TIME: %d\n", finished[0]->turnaround_time);
+    ///printf("RESPONSE TIME: %d\n", finished[0]->response_time);
+    ///printf("WAITING TIME: %d\n", finished[0]->waiting_time);
 
     // Guardamos el resumen en el archivo de salida indicado
     FILE* output_stream = fopen(argv[2], "w");
@@ -274,14 +276,17 @@ int main(int argc, char **argv)
 
 
     /* Liberar la memoria y  cerrar los archivos*/
+    ///printf("Liberando finished\n");
     for (int i=0; i<total_process;i++){
-        printf("PID: %d\n", finished[i]->PID);
+        ///printf("PID: %d | NAME: %s\n", finished[i]->PID, finished[i]->name);
         free(finished[i]);
     };
-    free(processing);
+    free(processing_pointer);
+    ///printf("Liberando starting_queue\n");
     free_memory(starting_queue);
     input_file_destroy(proob);
     fclose(input_stream);
+    fclose(output_stream);
 
 
 

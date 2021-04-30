@@ -60,6 +60,7 @@ void create_process(InputFile* proob, struct Queue* starting_queue, int Q){
         new->cycles = cycles;
         new->wait = wait;
         new->waiting_delay = waiting_delay;
+        new->waiting_since = starting_time;
         new->next = NULL;
         new->priority = Q-1;
         new->time_executed_without_wait = 0;

@@ -1,0 +1,7 @@
+*/*.csv
+*/*.txt
+*/obj
+
+T1/crtree
+
+T2/mlfq

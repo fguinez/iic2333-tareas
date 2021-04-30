@@ -204,6 +204,10 @@ void crear_hijo_worker(char* instructions, int nro_proceso){
             if (err == -1) {
                 int errve = errno;
                 printf("%s\n", strerror(errve));
+
+                // Liberamos memoria
+                free_worker();
+
                 exit(errve);
             };
             

@@ -47,13 +47,15 @@ int main(int argc, char **argv)
 
     /* Sacamos el índice y el total de procesos */
     int indice = atoi(argv[2]);
-    if (argv[2] >= indice) {
+    int total_procesos;
+    fscanf(input_stream, "%d", &total_procesos);
+
+    // Chequeamos que el índice ingresado sea correcto
+    if ((indice >= total_procesos) || (indice < 0)) {
         printf("Debes ingresar un índice <process> válido\n");
         fclose(input_stream);
         return 3;
     };
-    int total_procesos;
-    fscanf(input_stream, "%d", &total_procesos);
 
     /* Como ya abrimos el archivo y ya tenemos el índice, buscamos el proceso asociado al índice */
     char* proceso = buscar_linea(argv[1], indice);

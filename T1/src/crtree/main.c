@@ -98,7 +98,6 @@ int main(int argc, char **argv)
           * en un mismo archivo, tal como lo pide el enunciado.*/
 
         ///printf("++++++++++++++++++++++++\n");
-        exit(0);
     }
 
     else{
@@ -112,7 +111,6 @@ int main(int argc, char **argv)
           * debiese guardar el resultado en un archivo como se pide en el enunciado*/
         ///printf("P%i (W): Terminado\n", indice);
         ///printf("++++++++++++++++++++++++\n");
-        exit(0);
     }
 
     // Cerramos el archivo de input

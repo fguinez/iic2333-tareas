@@ -15,9 +15,11 @@
  * ejecutando actualmente*/
 /* Puedes usar estas variables en cualquier archivo. Las programé para que se actualizaran según corresponda */
 char* proceso_global;
+char* proceso_pointer;
 struct lista* lista_hijos;
 struct manager_data manager;
 struct worker_data worker;
+FILE* input_stream;
 
 // Para mostrar procesos en consola, descomentar todas las líneas con '///' en funciones.c y main.c
 
@@ -34,7 +36,7 @@ int main(int argc, char **argv)
         return 1;
     }
     /* Abre el input file */
-    FILE* input_stream = fopen(argv[1], "r");
+    input_stream = fopen(argv[1], "r");
 
     // Comprueba que el archivo exista
     if(!input_stream)
@@ -51,7 +53,7 @@ int main(int argc, char **argv)
     /* Como ya abrimos el archivo y ya tenemos el índice, buscamos el proceso asociado al índice */
     char* proceso = buscar_linea(argv[1], indice);
     strip(proceso);
-    char* proceso_pointer = proceso;
+    proceso_pointer = proceso;
     ///printf("P%i    : Ejecutando: %s\n", indice, proceso);
     char* proceso_copia;
     proceso_copia = strdup(proceso);

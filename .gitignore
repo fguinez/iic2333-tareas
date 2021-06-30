@@ -2,6 +2,8 @@
 */*.txt
 */obj
 
+Icon*
+
 T1/crtree
 
 T2/mlfq
